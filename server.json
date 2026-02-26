@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.rplryan/x402-discovery-mcp",
   "title": "x402 Service Discovery",
-  "description": "Find and evaluate x402-payable APIs at runtime. Quality-ranked discovery with uptime, latency, and ERC-8004 on-chain trust signals. 5 tools: discover, browse, health check, register, and trust lookup.",
+  "description": "Quality-ranked x402 API discovery. Uptime, latency & ERC-8004 trust signals. 5 MCP tools.",
   "version": "1.0.0",
   "websiteUrl": "https://rplryan.github.io/ouroboros/demo.html",
   "repository": {
