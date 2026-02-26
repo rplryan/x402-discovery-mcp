@@ -10,18 +10,9 @@
     "source": "github",
     "id": "rplryan/x402-discovery-mcp"
   },
-  "packages": [
-    {
-      "registryType": "oci",
-      "identifier": "ghcr.io/rplryan/x402-discovery-mcp:latest",
-      "transport": {
-        "type": "stdio"
-      }
-    }
-  ],
   "remotes": [
     {
-      "type": "streamable-http",
+      "transportType": "http",
       "url": "https://x402-discovery-api.onrender.com/mcp"
     }
   ]
