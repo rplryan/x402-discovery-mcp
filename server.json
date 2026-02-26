@@ -12,7 +12,7 @@
   },
   "remotes": [
     {
-      "transportType": "http",
+      "type": "streamable-http",
       "url": "https://x402-discovery-api.onrender.com/mcp"
     }
   ]
