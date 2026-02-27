@@ -1,32 +1,44 @@
 # x402 Service Discovery MCP Server
 
-> **The most comprehensive index of x402-payable services on Base — 251+ services, real-time quality signals, and agent-native tools. Built for Claude, Cursor, Windsurf, and any MCP-compatible AI agent.**
+> **The community-built Bazaar for the x402 agentic economy — 251+ live services, real-time quality signals, facilitator-compatibility checks, and ERC-8004 trust scoring. The discovery layer that Coinbase's own PROJECT-IDEAS.md asked the community to build.**
 
-[![MCP Registry](https://img.shields.io/badge/MCP%20Registry-io.github.rplryan%2Fx402--discovery--mcp-blue)](https://registry.modelcontextprotocol.io/servers/io.github.rplryan/x402-discovery-mcp)
+[![MCP Registry](https://img.shields.io/badge/MCP%20Registry-Published-blue?logo=github)](https://registry.modelcontextprotocol.io/servers/io.github.rplryan/x402-discovery-mcp)
+[![Smithery Score](https://img.shields.io/badge/Smithery-100%2F100-brightgreen?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPjwvc3ZnPg==)](https://smithery.ai/server/x402-discovery-mcp)
 [![API Status](https://img.shields.io/badge/API-Live%20v3.3.0-brightgreen)](https://x402-discovery-api.onrender.com)
-[![Services](https://img.shields.io/badge/Services%20Indexed-251%2B-brightgreen)](https://x402-discovery-api.onrender.com/.well-known/x402-discovery)
+[![Services Indexed](https://img.shields.io/badge/Services%20Indexed-251%2B-brightgreen)](https://x402-discovery-api.onrender.com/.well-known/x402-discovery)
+[![mcp.so](https://img.shields.io/badge/mcp.so-Submitted-orange)](https://mcp.so/server/x402-discovery-mcp)
+[![Glama](https://img.shields.io/badge/Glama-Under%20Review-orange)](https://glama.ai/mcp/servers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## What This Does
+---
 
-x402 is Coinbase's HTTP-native micropayment standard for the agentic web. An AI agent hits an endpoint, gets an HTTP 402 response, pays with USDC on Base, and the endpoint returns data. No API keys. No subscriptions. Pay-per-use, machine-to-machine.
+## What This Is (30 seconds)
 
-**The problem:** 251+ x402-payable services exist across the ecosystem but there's no way for an agent to find and evaluate them. Which ones are live? Which have the lowest latency? Which are facilitator-compatible?
+**x402** is Coinbase's HTTP-native micropayment standard for the agentic web. An AI agent hits an endpoint, gets an HTTP 402 challenge, pays with USDC on Base, and receives data — no API keys, no subscriptions, pure machine-to-machine.
 
-**This MCP server is the answer.** It connects any Claude, Cursor, or Windsurf agent directly to the x402 Service Discovery API: a live, continuously-updated catalog.
+**The problem:** 251+ x402-payable services exist across the ecosystem. The official x402.org catalog lists names. That's it. No uptime data. No latency scores. No facilitator-compatibility flags. No trust signals. An agent has no way to know which services are actually live, trustworthy, or compatible with its payment flow.
 
-## MCP Tools (6 total)
+**This MCP server solves it.** Connect any Claude, Cursor, or Windsurf agent directly to the x402 Service Discovery API — a continuously-updated catalog with real quality signals on every entry. Find services, check health, verify facilitator compatibility, and register new endpoints — all from inside your AI workflow.
 
-| Tool | Description | Cost |
+---
+
+## MCP Tools (5 tools)
+
+| Tool | What It Does | Cost |
 |------|-------------|------|
-| `x402_discover` | Search 251+ services by keyword, category, capability | $0.005 USDC |
-| `x402_register` | Register a new service in the catalog | Free |
-| `x402_health` | Real-time health + latency for any service | Free |
-| `x402_catalog` | Browse the full catalog with filters | Free |
-| `x402_report` | Report agent payment outcome | Free |
-| `x402_facilitator_check` | Check facilitator compatibility | Free |
+| `x402_discover` | Semantic search across 251+ services by keyword, category, max price | **$0.005 USDC** *(pays via x402 — eats its own dogfood)* |
+| `x402_health_check` | Real-time uptime + latency check for any service URL | Free |
+| `x402_register` | Register a new x402 service into the live catalog | Free |
+| `x402_trust` | ERC-8004 trust score and reputation signals for a service | Free |
+| `x402_facilitator_check` | Verify facilitator compatibility before committing to a payment | Free |
 
-## Quickstart (30 seconds)
+---
+
+## Quickstart — 30 Seconds to Discovery
+
+### Option A: Docker (recommended)
+
+Add to your `claude_desktop_config.json`, Cursor MCP settings, or Windsurf config:
 
 ```json
 {
@@ -39,63 +51,201 @@ x402 is Coinbase's HTTP-native micropayment standard for the agentic web. An AI 
 }
 ```
 
-Add to Claude Desktop config or Cursor MCP settings. Done.
+### Option B: npx (no Docker required)
 
-## Why This Exists
+```json
+{
+  "mcpServers": {
+    "x402-discovery": {
+      "command": "npx",
+      "args": ["-y", "@rplryan/x402-discovery-mcp"]
+    }
+  }
+}
+```
 
-The x402 ecosystem has 251+ services across data, compute, agent, and utility categories. Without discovery infrastructure, agents cannot find or evaluate them. This is the Yellow Pages for the payable web.
+### Option C: Direct API
 
-**Quality signals per service:**
-- Uptime percentage (rolling 30-day)
-- Average latency (ms)
-- Facilitator compatibility (required for automated payments)
-- ERC-8004 trust signals
-- Agent-native `llm_usage_prompt` and Python SDK snippets
+The Discovery API is publicly accessible — no authentication required:
 
-**Auto-growth:** Catalog scans x402.org/ecosystem and awesome-x402 every 6 hours.
+```bash
+# Search for services
+curl "https://x402-discovery-api.onrender.com/discover?query=blockchain+analytics&max_price_usd=0.01"
 
-## Example
+# Full catalog
+curl "https://x402-discovery-api.onrender.com/.well-known/x402-discovery"
+```
+
+---
+
+## Why This Matters
+
+### The Discovery Gap in x402
+
+The x402 protocol solves *payment*. It does not solve *discovery*. When 251+ services exist but agents can't find, evaluate, or route to them intelligently, the protocol's full value is unrealized.
+
+This project fills that gap with three layers:
+
+1. **Discovery** — Find x402 services by capability, category, price ceiling
+2. **Quality signals** — Uptime %, latency (ms), facilitator compatibility, ERC-8004 trust score
+3. **Routing intelligence** — Companion [x402 RouteNet](https://github.com/rplryan/x402-routenet) selects the optimal service from discovery results
+
+### What Makes This Different from x402.org/ecosystem
+
+| Capability | x402.org/ecosystem | This Project |
+|------------|-------------------|---------------|
+| Service listings | ✅ Names + URLs | ✅ Full metadata |
+| Uptime monitoring | ❌ None | ✅ Live health checks |
+| Latency data | ❌ None | ✅ Per-service ms scores |
+| Facilitator compatibility | ❌ None | ✅ Per-service flag |
+| ERC-8004 trust signals | ❌ None | ✅ Reputation scoring |
+| Agent-native usage prompts | ❌ None | ✅ `llm_usage_prompt` per service |
+| Auto-updated catalog | ❌ Manual | ✅ Scans every 6 hours |
+| MCP integration | ❌ None | ✅ 5 tools, registry-published |
+| Semantic search | ❌ None | ✅ Keyword + category + price |
+
+---
+
+## Live Catalog Stats
+
+```
+Total Services:      251+
+Auto-scan interval:  6 hours
+Scan sources:        x402.org/ecosystem, awesome-x402, x402scan.com
+Categories:          data, compute, agent, utility
+Facilitator-compat:  Flagged per service
+Trust signals:       ERC-8004 per service
+API uptime:          Live at https://x402-discovery-api.onrender.com
+```
+
+### Catalog Sample
+
+| Category | Count | Notable Services |
+|----------|-------|------------------|
+| **data** | 23+ | CoinGecko, Einstein AI, DJD Agent Score, Ordiscan, Nansen, Zapper, AdEx AURA |
+| **utility** | 20+ | dTelecom STT, Pinata, Tip.MD, Cybercentry, Trusta Attestation, AsterPay |
+| **compute** | 10+ | BlockRun.AI, X402Engine (28 APIs), AurraCloud, AiMo, QuickSilver |
+| **agent** | 9+ | Questflow, Ubounty, Bitte Protocol, Farnsworth, SerenaI |
+
+---
+
+## Example: Agent Workflow
 
 ```python
-# Find a live blockchain analytics service under $0.01
-result = x402_discover(query="blockchain analytics", max_price_usd=0.01)
-# Returns ranked services with price, uptime, latency, usage examples
+# 1. Agent needs blockchain analytics under $0.01
+result = x402_discover(
+    query="blockchain analytics whale tracking",
+    max_price_usd=0.01,
+    category="data"
+)
+# Returns: ranked list with price, uptime %, latency, llm_usage_prompt
 
-# Before paying, verify facilitator compatibility
-compat = x402_facilitator_check(url="https://einsteinai.io/api")
-# Returns: facilitator_compatible=true/false, payment_details
+# 2. Verify the top result is facilitator-compatible before paying
+compat = x402_facilitator_check(url=result[0]["url"])
+# Returns: {facilitator_compatible: true, payment_details: {...}}
+
+# 3. Check live health before committing
+health = x402_health_check(url=result[0]["url"])
+# Returns: {status: "healthy", latency_ms: 142, uptime_pct: 99.1}
+
+# 4. Now pay via x402 — agent proceeds with confidence
 ```
+
+This is **EIP-712 signed `TransferWithAuthorization`** via the x402 HTTP protocol — not direct ERC-20 transfer. The signature is verified server-side; on-chain settlement via `receiveWithAuthorization` is the next tier.
+
+---
+
+## CDP Builder Grant Context
+
+This project is a direct implementation of two items from Coinbase's own public roadmap:
+
+**From `PROJECT-IDEAS.md` in coinbase/x402:**
+> *"Dynamic Endpoint Shopper — An agent that discovers an MCP registry, pays for access, chains results from multiple services"*
+
+**From the CDP x402 facilitator roadmap:**
+> *"A discovery layer for buyers (human and agents) to find available services (Bazaar)"*
+
+We built the community Bazaar. It's live. It has 251+ services. It has quality signals the official page doesn't. And it **uses x402 payments itself** — `x402_discover` costs $0.005 USDC, paid via the protocol it serves.
+
+### What We've Shipped (11 days)
+
+| Deliverable | Status |
+|-------------|--------|
+| x402 Service Discovery API v3.3.0 | ✅ Live on Render |
+| x402 Discovery MCP Server | ✅ Docker + GitHub MCP Registry |
+| x402 RouteNet v1.0.0 (smart routing) | ✅ Live on Render |
+| x402 Payment Harness v1.0.0 (EOA testing) | ✅ PyPI `pip install x402-payment-harness` |
+| 251+ services indexed with quality signals | ✅ Auto-updating every 6h |
+| ERC-8004 trust layer | ✅ Per-service trust scoring |
+| Facilitator compatibility layer | ✅ Pre-payment compatibility check |
+| Full HTTP 402 protocol flow proven on Base | ✅ EIP-712 sign → X-PAYMENT header → 200 |
+| Smithery score | ✅ 100/100 |
+| GitHub MCP Registry | ✅ Published: `io.github.rplryan/x402-discovery-mcp` |
+
+---
 
 ## Related Projects
 
 | Project | Description | Status |
 |---------|-------------|--------|
-| [x402 Discovery API](https://x402-discovery-api.onrender.com) | Backend API | Live v3.3.0 |
-| [x402 RouteNet](https://github.com/rplryan/x402-routenet) | Smart payment routing | Live v1.0.0 |
-| [x402 Payment Harness](https://github.com/rplryan/x402-payment-harness) | EOA testing toolkit | PyPI v1.0.0 |
+| [x402 Discovery API](https://x402-discovery-api.onrender.com) | REST backend powering this MCP server | Live v3.3.0 |
+| [x402 RouteNet](https://github.com/rplryan/x402-routenet) | Smart routing across discovered services | Live v1.0.0 |
+| [x402 Payment Harness](https://github.com/rplryan/x402-payment-harness) | EOA-based Python library + CLI for x402 payment testing | PyPI v1.0.0 |
 
-## Catalog Sample
+---
 
-| Category | Count | Notable Services |
-|----------|-------|------------------|
-| data | 23+ | CoinGecko, Einstein AI, DJD Score, Ordiscan, Nansen |
-| utility | 20+ | dTelecom STT, Pinata, Tip.MD, Cybercentry |
-| compute | 10+ | BlockRun.AI, X402Engine, AurraCloud |
-| agent | 9+ | Questflow, Ubounty, Bitte Protocol |
+## Register Your Service
 
-## Contributing
-
-Register your x402 service for free:
+If you're building an x402-enabled service, add it to the catalog:
 
 ```bash
 curl -X POST https://x402-discovery-api.onrender.com/register \
   -H "Content-Type: application/json" \
-  -d '{"name": "My Service", "url": "https://...", "price_usd": 0.01, "category": "data"}'
+  -d '{
+    "name": "My Service",
+    "url": "https://myservice.example.com/api",
+    "price_usd": 0.005,
+    "category": "data",
+    "description": "What your service does",
+    "network": "base-mainnet"
+  }'
 ```
+
+Or use the `x402_register` MCP tool from inside Claude/Cursor/Windsurf.
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│              AI Agent (Claude / Cursor / Windsurf)  │
+│                                                     │
+│  x402_discover → x402_health_check → x402_trust     │
+│  x402_facilitator_check → x402_register             │
+└───────────────────┬─────────────────────────────────┘
+                    │ MCP (stdio/Docker)
+┌───────────────────▼─────────────────────────────────┐
+│          x402 Discovery MCP Server                  │
+│          ghcr.io/rplryan/x402-discovery-mcp         │
+└───────────────────┬─────────────────────────────────┘
+                    │ HTTPS
+┌───────────────────▼─────────────────────────────────┐
+│     x402 Discovery API (Render, v3.3.0)             │
+│     https://x402-discovery-api.onrender.com         │
+│                                                     │
+│  • 251+ services  • Auto-scan every 6h              │
+│  • Health checks  • Facilitator compat flags        │
+│  • ERC-8004 trust • llm_usage_prompt per service    │
+└─────────────────────────────────────────────────────┘
+```
+
+---
 
 ## License
 
 MIT
 
 ---
-*Built on Coinbase x402 protocol | Base Network | ERC-8004 | MCP*
+
+*Built on [Coinbase x402 protocol](https://github.com/coinbase/x402) | Base Network | ERC-8004 | Model Context Protocol*
