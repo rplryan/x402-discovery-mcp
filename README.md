@@ -195,3 +195,5 @@ This MCP server wraps the public [x402 Service Discovery API](https://x402-disco
 ## License
 
 MIT
+
+<!-- mcp-name: io.github.rplryan/x402-discovery-mcp -->

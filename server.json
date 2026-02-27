@@ -2,14 +2,23 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.rplryan/x402-discovery-mcp",
   "title": "x402 Service Discovery",
-  "description": "Quality-ranked x402 API discovery. Uptime, latency & ERC-8004 trust signals. 5 MCP tools.",
-  "version": "1.0.0",
-  "websiteUrl": "https://rplryan.github.io/ouroboros/demo.html",
+  "description": "Discover & rank x402 payment-gated APIs by capability, price & ERC-8004 trust. USDC on Base.",
+  "version": "1.1.0",
+  "websiteUrl": "https://github.com/rplryan/x402-discovery-mcp",
   "repository": {
     "url": "https://github.com/rplryan/x402-discovery-mcp",
     "source": "github",
     "id": "rplryan/x402-discovery-mcp"
   },
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/rplryan/x402-discovery-mcp:1.1.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ],
   "remotes": [
     {
       "type": "streamable-http",

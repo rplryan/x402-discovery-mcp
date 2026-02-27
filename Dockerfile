@@ -5,6 +5,7 @@ LABEL org.opencontainers.image.description="MCP server for x402 Service Discover
 LABEL org.opencontainers.image.url="https://github.com/rplryan/x402-discovery-mcp"
 LABEL org.opencontainers.image.source="https://github.com/rplryan/x402-discovery-mcp"
 LABEL org.opencontainers.image.licenses="MIT"
+LABEL io.modelcontextprotocol.server.name="io.github.rplryan/x402-discovery-mcp"
 
 WORKDIR /app
 
