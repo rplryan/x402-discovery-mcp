@@ -2,5 +2,11 @@
   "$schema": "https://glama.ai/mcp/schemas/server.json",
   "maintainers": [
     "rplryan"
+  ],
+  "payments": [
+    {
+      "type": "x402",
+      "description": "x402 micropayments for premium search queries ($0.001 USDC per query). Discovery, health, register, attest, and facilitator_check tools are free."
+    }
   ]
 }
