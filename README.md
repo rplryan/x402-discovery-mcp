@@ -7,8 +7,12 @@
 [![API Status](https://img.shields.io/badge/API-Live%20v3.3.0-brightgreen)](https://x402-discovery-api.onrender.com)
 [![Services Indexed](https://img.shields.io/badge/Services%20Indexed-251%2B-brightgreen)](https://x402-discovery-api.onrender.com/.well-known/x402-discovery)
 [![mcp.so](https://img.shields.io/badge/mcp.so-Submitted-orange)](https://mcp.so/server/x402-discovery-mcp)
-[![Glama](https://img.shields.io/badge/Glama-Under%20Review-orange)](https://glama.ai/mcp/servers)
+[![Glama](https://img.shields.io/badge/Glama-Live-brightgreen)](https://glama.ai/mcp/servers/@rplryan/x402-discovery-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+<a href="https://glama.ai/mcp/servers/@rplryan/x402-discovery-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@rplryan/x402-discovery-mcp/badge" />
+</a>
 
 ---
 
