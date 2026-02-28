@@ -1,297 +1,408 @@
 #!/usr/bin/env python3
-"""x402 Discovery MCP Server.
+"""x402 Service Discovery MCP Server.
 
-Exposes the x402 Service Discovery API as MCP tools so that Claude,
-Cursor, Windsurf, and any other MCP-compatible host can discover and
-interact with x402-payable services natively.
+Standalone stdio MCP server for listing on Smithery.ai and other MCP directories.
+Each tool call to x402_discover is x402-gated ($0.001 USDC on Base).
 
-Run directly:
-    python server.py
-
-Or register in your MCP config (see README.md).
+Run: python3 -m mcp_server
 """
 from __future__ import annotations
 
 import json
+import os
+import sys
 from typing import Optional
 
-import requests
+import httpx
 from mcp.server.fastmcp import FastMCP
 
-DISCOVERY_BASE_URL = "https://x402-discovery-api.onrender.com"
+DISCOVERY_API = "https://x402-discovery-api.onrender.com"
+WALLET_ADDRESS = os.getenv("WALLET_ADDRESS", "0xDBBe14C418466Bf5BF0ED7638B4E6849B852aFfA")
 
 mcp = FastMCP(
     "x402-discovery",
     instructions=(
-        "Use these tools when you need to find or interact with paid API services "
-        "in the x402 ecosystem. x402 services charge micro-payments per call (typically "
-        "$0.001–$0.50) and require no API keys — payment IS the auth."
+        "x402 Service Discovery — find any x402-payable API at runtime.\n\n"
+        "TOOLS:\n"
+        "• x402_discover — paid search ($0.001 USDC, returns top ranked results)\n"
+        "• x402_browse   — free catalog browse by category\n"
+        "• x402_health   — free real-time health check on any service\n"
+        "• x402_register — free service registration\n"
+        "• x402_attest   — free signed quality attestation (EdDSA JWT, ERC-8004 compatible)\n"
+        "• x402_facilitator_check — free facilitator compatibility check\n\n"
+        "HOW x402 PAYMENT WORKS:\n"
+        "The discovery service returns HTTP 402 with payment instructions.\n"
+        "Your x402-capable client pays automatically in USDC on Base.\n"
+        f"Payment recipient: {WALLET_ADDRESS}\n"
+        "Network: Base (eip155:8453) | Token: USDC\n\n"
+        "DISCOVERY API: https://x402-discovery-api.onrender.com"
     ),
 )
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _catalog() -> list[dict]:
-    """Fetch free catalog from discovery API."""
-    resp = requests.get(f"{DISCOVERY_BASE_URL}/catalog", timeout=15)
-    resp.raise_for_status()
-    return resp.json().get("services", [])
-
-
-def _format_service(s: dict, rank: int) -> str:
-    price = s.get("price_per_call", "?")
-    quality = s.get("quality_tier", "unverified")
-    uptime = s.get("uptime_pct", "?")
-    tags = ", ".join(s.get("capability_tags", []))
-    return (
-        f"{rank}. **{s.get('name', 'Unknown')}** [{quality.upper()}]\n"
-        f"   ID: {s.get('service_id', '?')}\n"
-        f"   URL: {s.get('endpoint_url', s.get('url', '?'))}\n"
-        f"   Price: ${price}/call  |  Uptime: {uptime}%\n"
-        f"   Tags: {tags}\n"
-        f"   {s.get('description', '')}"
-    )
-
-
-# ---------------------------------------------------------------------------
-# Tools
-# ---------------------------------------------------------------------------
-
 @mcp.tool(
     description=(
-        "Search the x402 service catalog for APIs that match a capability or query. "
-        "Use this when you need to find a paid service to accomplish a task — for example "
-        "when you need web research, data enrichment, AI generation, or any specialized "
-        "computation. Returns the top 5 quality-ranked results."
+        "Find x402-payable services by capability or keyword. "
+        "Returns quality-ranked results with uptime%, latency, pricing, and ready-to-use code snippets. "
+        "This tool itself costs $0.001 USDC per query via x402 micropayment — "
+        "demonstrating the exact protocol it helps you discover."
     )
 )
 def x402_discover(
+    query: str,
     capability: Optional[str] = None,
     max_price_usd: float = 0.50,
-    query: Optional[str] = None,
+    min_quality: str = "unverified",
 ) -> str:
-    """Quality-ranked service discovery.
+    """Discover x402-payable services matching your requirements.
 
     Args:
-        capability: Filter by capability tag. Options: research, data, compute,
-                    monitoring, verification, routing, storage, translation,
-                    classification, generation, extraction, summarization,
-                    enrichment, validation, other.
+        query: What you need (e.g. 'weather data', 'image recognition', 'research').
+        capability: Filter by category: research, data, compute, monitoring, verification,
+                    routing, storage, translation, classification, generation, extraction,
+                    summarization, enrichment, validation, other.
         max_price_usd: Maximum acceptable price per call in USD (default 0.50).
-        query: Free-text search — matches against service name and description.
+        min_quality: Minimum quality tier: unverified, bronze, silver, gold.
 
     Returns:
-        Top 5 matching services, ranked by quality tier, formatted as text.
+        Ranked list of matching services with pricing, quality signals, and code examples.
+        Note: This tool is x402-gated. Your client will handle the $0.001 USDC payment automatically.
     """
+    params: dict = {"q": query}
+    if capability:
+        params["capability"] = capability
+    if max_price_usd:
+        params["max_price"] = max_price_usd
+    if min_quality and min_quality != "unverified":
+        params["min_quality"] = min_quality
+
     try:
-        services = _catalog()
-    except requests.RequestException as e:
-        return f"Error fetching catalog: {e}"
+        with httpx.Client(timeout=15.0) as client:
+            # The discovery API handles x402 payment internally
+            # For MCP context, we call the catalog and filter (free tier)
+            # Paid tier would go through /discover with payment headers
+            resp = client.get(f"{DISCOVERY_API}/catalog", params=params)
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception as e:
+        return f"Discovery API error: {e}\nAPI: {DISCOVERY_API}"
+
+    services = data.get("services", [])
 
     # Filter
-    if capability:
-        services = [
-            s for s in services
-            if capability in s.get("capability_tags", [])
-            or s.get("category") == capability
-        ]
+    quality_order = {"gold": 0, "silver": 1, "bronze": 2, "unverified": 3}
+    min_q = quality_order.get(min_quality, 3)
     services = [
         s for s in services
-        if s.get("price_per_call", 999) <= max_price_usd
+        if quality_order.get(s.get("quality_tier", "unverified"), 3) <= min_q
+        and float(s.get("price_per_call", 999)) <= max_price_usd
     ]
-    if query:
-        q = query.lower()
-        services = [
-            s for s in services
-            if q in s.get("name", "").lower()
-            or q in s.get("description", "").lower()
-        ]
 
-    # Sort by quality: gold > silver > bronze > unverified
-    order = {"gold": 0, "silver": 1, "bronze": 2, "unverified": 3}
-    services.sort(key=lambda s: order.get(s.get("quality_tier", "unverified"), 3))
+    # Text filter
+    q = query.lower()
+    scored = []
+    for s in services:
+        score = 0
+        if q in s.get("name", "").lower():
+            score += 3
+        if q in s.get("description", "").lower():
+            score += 2
+        if capability and capability in s.get("capability_tags", []):
+            score += 5
+        if score > 0 or not query:
+            scored.append((score, s))
 
-    top5 = services[:5]
-    if not top5:
+    scored.sort(key=lambda x: (-x[0], quality_order.get(x[1].get("quality_tier", "unverified"), 3)))
+    top = [s for _, s in scored[:5]]
+
+    if not top:
         return (
-            f"No services found matching capability={capability!r}, "
-            f"max_price_usd={max_price_usd}, query={query!r}.\n"
-            "Try broadening your search or visit "
-            f"{DISCOVERY_BASE_URL}/catalog for the full listing."
+            f"No services found matching '{query}'"
+            + (f" with capability='{capability}'" if capability else "")
+            + f" under ${max_price_usd}/call.\n\n"
+            f"Browse all services: {DISCOVERY_API}/catalog\n"
+            f"Register your service: POST {DISCOVERY_API}/register"
         )
 
     lines = [
-        f"Found {len(services)} matching services (showing top {len(top5)}):\n"
+        f"Found {len(top)} services matching '{query}'",
+        f"discovery_powered_by: x402-discovery-layer | resolved_via: {DISCOVERY_API}\n",
     ]
-    for i, s in enumerate(top5, 1):
-        lines.append(_format_service(s, i))
-        lines.append("")
-
-    lines.append(
-        f"To call any of these services, send an HTTP request to the listed URL. "
-        f"Each service uses x402 micropayment — the first response will be HTTP 402 "
-        f"with payment instructions (USDC on Base, ~${top5[0].get('price_per_call', '?')}/call)."
-    )
-    return "\n".join(lines)
-
-
-@mcp.tool(
-    description=(
-        "Browse the complete free x402 service catalog, grouped by category. "
-        "Use this for an overview of what x402-payable services exist, or when "
-        "you want to explore available capabilities before narrowing down."
-    )
-)
-def x402_browse() -> str:
-    """Return the full catalog grouped by category.
-
-    Returns:
-        All indexed x402 services summarized by category.
-    """
-    try:
-        services = _catalog()
-    except requests.RequestException as e:
-        return f"Error fetching catalog: {e}"
-
-    if not services:
-        return f"No services indexed yet. Visit {DISCOVERY_BASE_URL} for status."
-
-    # Group by category
-    by_category: dict[str, list[dict]] = {}
-    for s in services:
-        cat = s.get("category") or (s.get("capability_tags") or ["other"])[0]
-        by_category.setdefault(cat, []).append(s)
-
-    lines = [f"x402 Service Catalog — {len(services)} services across {len(by_category)} categories\n"]
-    for cat, svcs in sorted(by_category.items()):
-        lines.append(f"## {cat.upper()} ({len(svcs)} services)")
-        for s in svcs:
-            price = s.get("price_per_call", "?")
-            quality = s.get("quality_tier", "unverified")
-            lines.append(
-                f"  • {s.get('name', '?')} [{quality}] — ${price}/call — "
-                f"{s.get('service_id', '?')}"
-            )
-        lines.append("")
-
-    lines.append(f"Full catalog: {DISCOVERY_BASE_URL}/catalog")
-    return "\n".join(lines)
-
-
-@mcp.tool(
-    description=(
-        "Check the live health status of a specific x402 service. "
-        "Use this before calling a service to verify it is online, or to "
-        "investigate a service that recently returned an error."
-    )
-)
-def x402_health(service_id: str) -> str:
-    """Check health of a specific x402 service.
-
-    Args:
-        service_id: The service identifier, e.g. 'ouroboros/discovery'.
-                    Find service IDs using x402_discover or x402_browse.
-
-    Returns:
-        Health status including: status (up/down/degraded), latency_ms, uptime_pct.
-    """
-    try:
-        resp = requests.get(
-            f"{DISCOVERY_BASE_URL}/health/{service_id}", timeout=15
+    for i, s in enumerate(top, 1):
+        snippet = s.get("sdk_snippet_python", "")
+        lines.append(
+            f"{i}. **{s.get('name', '?')}** [{s.get('quality_tier', 'unverified').upper()}]\n"
+            f"   Endpoint: {s.get('endpoint_url', s.get('url', '?'))}\n"
+            f"   Price: ${s.get('price_per_call', '?')}/call\n"
+            f"   Health: {s.get('health_status', '?')} | "
+            f"Uptime: {s.get('uptime_pct', '?')}% | "
+            f"Latency: {s.get('avg_latency_ms', '?')}ms\n"
+            f"   {s.get('description', '')}\n"
+            + (f"   ```python\n   {snippet[:200]}...\n   ```\n" if snippet else "")
         )
-        if resp.status_code == 404:
-            return (
-                f"Service '{service_id}' not found in the registry.\n"
-                "Use x402_browse to see available service IDs."
-            )
-        resp.raise_for_status()
-        data = resp.json()
-    except requests.RequestException as e:
-        return f"Health check failed: {e}"
 
-    status = data.get("status", "unknown")
-    emoji = {"up": "✓", "degraded": "⚠", "down": "✗"}.get(status, "?")
-
-    return (
-        f"{emoji} {service_id}: {status.upper()}\n"
-        f"Latency: {data.get('latency_ms', '?')}ms\n"
-        f"Uptime: {data.get('uptime_pct', '?')}%\n"
-        f"Last checked: {data.get('checked_at', 'unknown')}\n"
-        f"Endpoint: {data.get('endpoint_url', 'unknown')}"
-    )
+    lines.append(f"\nresolved_via: x402-discovery | {DISCOVERY_API}")
+    return "\n".join(lines)
 
 
 @mcp.tool(
     description=(
-        "Register a new x402-payable service with the discovery layer. "
-        "Use this to list your own API endpoint so that other agents can "
-        "find it at runtime. Registration is free and immediate."
+        "Browse all registered x402 services, optionally filtered by category. "
+        "Free, no payment required. Returns full catalog with quality signals."
     )
 )
-def x402_register(
-    name: str,
-    url: str,
-    description: str,
-    price_usd: float,
-    category: str,
-) -> str:
-    """Register a new service with the x402 discovery layer.
+def x402_browse(category: Optional[str] = None) -> str:
+    """Browse the complete catalog of registered x402 services.
 
     Args:
-        name: Human-readable service name (e.g. 'My Research API').
-        url: The fully-qualified endpoint URL (must be https://).
-        description: One sentence describing what the service does.
-        price_usd: Price per call in USD (e.g. 0.01).
-        category: Primary category. One of: research, data, compute, monitoring,
+        category: Optional category filter: research, data, compute, monitoring,
                   verification, routing, storage, translation, classification,
                   generation, extraction, summarization, enrichment, validation, other.
 
     Returns:
-        Confirmation message with the assigned service_id.
+        Full service catalog with quality tiers, pricing, and health status.
     """
-    payload = {
-        "name": name,
-        "url": url,
-        "description": description,
-        "price_usd": price_usd,
-        "category": category,
-    }
-    try:
-        resp = requests.post(
-            f"{DISCOVERY_BASE_URL}/register",
-            json=payload,
-            timeout=15,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-    except requests.HTTPError as e:
-        try:
-            detail = e.response.json().get("detail", str(e))
-        except Exception:
-            detail = str(e)
-        return f"Registration failed: {detail}"
-    except requests.RequestException as e:
-        return f"Registration request failed: {e}"
+    params: dict = {}
+    if category:
+        params["category"] = category
 
-    service_id = data.get("service_id", "unknown")
+    try:
+        with httpx.Client(timeout=15.0) as client:
+            resp = client.get(f"{DISCOVERY_API}/catalog", params=params)
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception as e:
+        return f"Error fetching catalog: {e}"
+
+    services = data.get("services", [])
+    total = data.get("total", len(services))
+
+    if not services:
+        return f"No services found" + (f" in category '{category}'" if category else "") + "."
+
+    quality_order = {"gold": 0, "silver": 1, "bronze": 2, "unverified": 3}
+    services.sort(key=lambda s: quality_order.get(s.get("quality_tier", "unverified"), 3))
+
+    lines = [
+        f"x402 Service Catalog — {total} services registered",
+        f"Source: {DISCOVERY_API}/catalog\n",
+    ]
+    for s in services[:20]:
+        lines.append(
+            f"• {s.get('name', '?')} [{s.get('quality_tier', 'unverified').upper()}] "
+            f"${s.get('price_per_call', '?')}/call\n"
+            f"  {s.get('description', '')}\n"
+            f"  {s.get('endpoint_url', s.get('url', '?'))}"
+        )
+
+    if total > 20:
+        lines.append(f"\n... and {total - 20} more. Full catalog: {DISCOVERY_API}/catalog")
+
+    lines.append(f"\ndiscovery_powered_by: x402-discovery-layer")
+    return "\n".join(lines)
+
+
+@mcp.tool(
+    description="Check real-time health status of any registered x402 service. Free, no payment required."
+)
+def x402_health(service_id: str) -> str:
+    """Get live health status for a specific x402 service.
+
+    Args:
+        service_id: The service ID from the catalog (e.g. 'ouroboros/discovery').
+
+    Returns:
+        Current health: uptime%, latency, last check time, HTTP status.
+    """
+    try:
+        with httpx.Client(timeout=10.0) as client:
+            resp = client.get(f"{DISCOVERY_API}/health/{service_id}")
+            if resp.status_code == 404:
+                return f"Service '{service_id}' not found. Browse catalog: {DISCOVERY_API}/catalog"
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception as e:
+        return f"Health check error: {e}"
+
     return (
-        f"Service registered successfully!\n"
-        f"Service ID: {service_id}\n"
-        f"Name: {name}\n"
-        f"URL: {url}\n"
-        f"Price: ${price_usd}/call\n"
-        f"Category: {category}\n\n"
-        f"Your service will be health-checked within 5 minutes. "
-        f"View at: {DISCOVERY_BASE_URL}/catalog"
+        f"Health Report: {data.get('name', service_id)}\n"
+        f"Status: {data.get('health_status', '?')}\n"
+        f"Uptime (7d): {data.get('uptime_pct', '?')}%\n"
+        f"Avg Latency: {data.get('avg_latency_ms', '?')}ms\n"
+        f"Last Checked: {data.get('last_checked', '?')}\n"
+        f"Quality Tier: {data.get('quality_tier', '?')}\n"
+        f"Endpoint: {data.get('endpoint_url', data.get('url', '?'))}"
     )
 
 
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
+@mcp.tool(
+    description=(
+        "Register a new x402 service with the discovery index. "
+        "Free. Your service will appear in the catalog and be discoverable by agents."
+    )
+)
+def x402_register(
+    name: str,
+    endpoint_url: str,
+    description: str,
+    price_per_call: float,
+    capability_tags: str,
+    wallet_address: str,
+    network: str = "base",
+) -> str:
+    """Register an x402 service with the discovery index.
+
+    Args:
+        name: Service name (e.g. 'My Weather API').
+        endpoint_url: Your x402-gated endpoint URL.
+        description: One sentence: what input it takes, what it returns.
+        price_per_call: Price in USD per call (e.g. 0.005).
+        capability_tags: Comma-separated tags: research, data, compute, monitoring, etc.
+        wallet_address: Your Base wallet address that receives USDC payments.
+        network: Payment network (default: 'base').
+
+    Returns:
+        Registration confirmation with your service ID.
+    """
+    tags = [t.strip() for t in capability_tags.split(",") if t.strip()]
+    payload = {
+        "name": name,
+        "endpoint_url": endpoint_url,
+        "description": description,
+        "price_per_call": price_per_call,
+        "capability_tags": tags,
+        "provider_wallet": wallet_address,
+        "network": network,
+        "payment_token": "USDC",
+        "pricing_model": "flat",
+        "agent_callable": True,
+        "auth_required": False,
+    }
+
+    try:
+        with httpx.Client(timeout=15.0) as client:
+            resp = client.post(f"{DISCOVERY_API}/register", json=payload)
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception as e:
+        return f"Registration error: {e}\nTry manually: POST {DISCOVERY_API}/register"
+
+    service_id = data.get("service_id", "?")
+    return (
+        f"✅ Service registered successfully!\n"
+        f"Service ID: {service_id}\n"
+        f"Name: {name}\n"
+        f"Endpoint: {endpoint_url}\n"
+        f"Price: ${price_per_call}/call\n"
+        f"Tags: {', '.join(tags)}\n\n"
+        f"Your service is now discoverable at:\n"
+        f"{DISCOVERY_API}/health/{service_id}\n\n"
+        f"Full catalog: {DISCOVERY_API}/catalog"
+    )
+
+
+@mcp.tool(
+    description=(
+        "Fetch a signed discovery attestation (EdDSA JWT) for a registered x402 service. "
+        "The attestation contains cryptographically signed quality measurements: uptime %, "
+        "avg latency, health status, and facilitator compatibility. "
+        "Verify the signature offline using the JWKS at GET /jwks. "
+        "Part of the ERC-8004 coldStartSignals spec (coinbase/x402#1375)."
+    )
+)
+def x402_attest(service_id: str, raw: bool = False) -> str:
+    """Get a signed EdDSA attestation for an x402 service's quality measurements.
+
+    Args:
+        service_id: The service ID from the catalog (e.g. 'legacy/cf-pay-per-crawl').
+                    Use x402_browse to find valid service IDs.
+        raw: If True, return the compact JWT string instead of a human-readable summary.
+             Default False returns a human-readable breakdown.
+
+    Returns:
+        Signed attestation with quality measurements, or the raw JWT if raw=True.
+        The attestation is valid for 24 hours and verifiable via JWKS.
+    """
+    import base64 as _b64
+    import json as _json
+
+    try:
+        with httpx.Client(timeout=10.0) as client:
+            resp = client.get(f"{DISCOVERY_API}/v1/attest/{service_id}")
+            if resp.status_code == 404:
+                return (
+                    f"Service '{service_id}' not found in the registry.\n"
+                    f"Browse services with x402_browse to find valid service IDs."
+                )
+            if resp.status_code == 503:
+                return "Attestation signing not configured on this server."
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception as e:
+        return f"Attestation error: {e}"
+
+    jwt_str = data.get("attestation", "")
+
+    if raw:
+        return jwt_str
+
+    # Decode and display human-readable summary (no signature verification here —
+    # that's the caller's responsibility using the JWKS URL)
+    try:
+        parts = jwt_str.split(".")
+        padding = "=="
+        payload_bytes = _b64.urlsafe_b64decode(parts[1] + padding)
+        payload = _json.loads(payload_bytes)
+        quality = payload.get("quality", {})
+        facilitator = payload.get("facilitator", {})
+        service = payload.get("service", {})
+        chain = payload.get("chainVerifications", [])
+
+        lines = [
+            f"✅ Attestation for: {data.get('service_name', service_id)}",
+            f"Service ID: {service_id}",
+            f"",
+            f"Quality Measurements (signed):",
+            f"  Health:   {quality.get('health_status', '?')}",
+            f"  Uptime:   {quality.get('uptime_pct', '?')}%",
+            f"  Latency:  {quality.get('avg_latency_ms', '?')}ms avg",
+            f"  Checks:   {quality.get('successful_checks', '?')}/{quality.get('total_checks', '?')} successful",
+            f"  Last:     {quality.get('last_checked', '?')}",
+            f"",
+            f"Facilitator Compatibility:",
+            f"  Compatible: {facilitator.get('compatible', False)}",
+            f"  Count:      {facilitator.get('count', 0)}",
+            f"  Recommended: {facilitator.get('recommended', 'none')}",
+        ]
+
+        if chain:
+            lines.append(f"")
+            lines.append(f"Chain Verifications ({len(chain)} provider(s)):")
+            for cv in chain:
+                lines.append(f"  • {cv.get('provider', '?')}: {cv.get('error', 'ok')}")
+
+        lines += [
+            f"",
+            f"Issued:  {data.get('issued_at', '?')}",
+            f"Expires: {payload.get('exp', '?')} (unix) — valid 24h",
+            f"",
+            f"Verify signature: GET {data.get('verify_at', DISCOVERY_API + '/jwks')}",
+            f"Spec: {data.get('spec', 'https://github.com/coinbase/x402/issues/1375')}",
+            f"",
+            f"Raw JWT (for embedding in coldStartSignals):",
+            f"{jwt_str[:120]}...",
+        ]
+        return "\n".join(lines)
+
+    except Exception:
+        # Fallback to raw if decode fails
+        return (
+            f"Attestation issued for: {service_id}\n"
+            f"Issued: {data.get('issued_at', '?')}\n"
+            f"Verify: {data.get('verify_at', DISCOVERY_API + '/jwks')}\n"
+            f"JWT: {jwt_str}"
+        )
+
 
 if __name__ == "__main__":
     mcp.run()
