@@ -1,0 +1,26 @@
+# Smithery server configuration
+# https://smithery.ai/docs/build/project-config
+build:
+  dockerfile: Dockerfile
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      base_url:
+        type: string
+        description: "Override the discovery API base URL (default: https://x402-discovery-api.onrender.com)"
+        default: "https://x402-discovery-api.onrender.com"
+      max_results:
+        type: integer
+        description: "Default maximum results per discovery query (1-50, default: 10)"
+        default: 10
+        minimum: 1
+        maximum: 50
+      preferred_category:
+        type: string
+        description: "Optional: pre-filter results to a specific category (research, data, compute, agent, utility)"
+    required: []
+  exampleConfig:
+    base_url: "https://x402-discovery-api.onrender.com"
+    max_results: 10
