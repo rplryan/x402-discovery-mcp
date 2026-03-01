@@ -3,7 +3,7 @@
   "name": "io.github.rplryan/x402-discovery-mcp",
   "title": "x402 Service Discovery",
   "description": "Discover & rank x402 payment-gated APIs by capability, price & ERC-8004 trust. USDC on Base.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "websiteUrl": "https://github.com/rplryan/x402-discovery-mcp",
   "repository": {
     "url": "https://github.com/rplryan/x402-discovery-mcp",
@@ -13,16 +13,10 @@
   "packages": [
     {
       "registryType": "oci",
-      "identifier": "ghcr.io/rplryan/x402-discovery-mcp:1.1.0",
+      "identifier": "ghcr.io/rplryan/x402-discovery-mcp:1.2.0",
       "transport": {
         "type": "stdio"
       }
-    }
-  ],
-  "remotes": [
-    {
-      "type": "streamable-http",
-      "url": "https://x402-discovery-api.onrender.com/mcp"
     }
   ]
 }
