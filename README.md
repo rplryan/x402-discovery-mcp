@@ -1,6 +1,7 @@
 # x402 Service Discovery MCP Server
 
-> ⭐️ If this is useful, a star helps others find it.
+> 📦 **24+ Docker pulls** · 100 unique developers · [⭐ Star to help others find this](https://github.com/rplryan/x402-discovery-mcp)
+
 > **The community-built Bazaar for the x402 agentic economy — 251+ live services, real-time quality signals, facilitator-compatibility checks, and ERC-8004 trust scoring. The discovery layer that Coinbase's own PROJECT-IDEAS.md asked the community to build.**
 
 [![MCP Registry](https://img.shields.io/badge/MCP%20Registry-Published-blue?logo=github)](https://registry.modelcontextprotocol.io/servers/io.github.rplryan/x402-discovery-mcp)
