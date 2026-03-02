@@ -1,79 +1,84 @@
 # Contributing to x402 Service Discovery
 
-Thank you for your interest in contributing! Here's how you can help the x402 ecosystem grow.
+Thanks for building on the x402 protocol! This guide explains how to add your service to the catalog, report bugs, or suggest features.
 
 ---
 
-## Registering a New x402 Service
+## 1. Register Your x402 Service
 
-The easiest way to contribute is to register an x402-compatible API endpoint in the discovery catalog.
+The easiest way to contribute is to add your x402-payable API to the live catalog.
 
-### Requirements
+### Option A: REST API
 
-Your service must implement the [x402 payment standard](https://github.com/coinbase/x402):
-
-- HTTP `402 Payment Required` response with x402 payment headers
-- USDC payments on Base (Base Mainnet or Base Sepolia for testing)
-- A publicly accessible endpoint URL
-
-### How to Register
-
-**Option 1: Via the MCP tool (recommended)**
-```
-x402_register(url="https://your-api.example.com/endpoint", category="your-category")
-```
-
-**Option 2: Via the REST API**
 ```bash
 curl -X POST https://x402-discovery-api.onrender.com/register \
-  -H 'Content-Type: application/json' \
-  -d '{"url": "https://your-api.example.com/endpoint", "category": "your-category"}'
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My Service",
+    "url": "https://myservice.example.com/api",
+    "price_usd": 0.010,
+    "category": "data",
+    "description": "What your service does",
+    "network": "base-mainnet"
+  }'
 ```
 
-**Option 3: Open an issue**
-Open a [New Registration issue](https://github.com/rplryan/x402-discovery-mcp/issues/new?template=register.md) with your endpoint URL and category.
+### Option B: MCP Tool (from inside Claude/Cursor/Windsurf)
 
-### Service Categories
+Just ask: *"Register my service at https://myapi.example.com — it's a data API that costs $0.01 per call."*
 
-Available categories: `search`, `generation`, `data`, `analytics`, `nlp`, `vision`, `audio`, `finance`, `infrastructure`, `other`
+Claude will call `x402_register` directly.
+
+### Required fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| name | string | Human-readable service name |
+| url | string | HTTPS endpoint implementing x402 |
+| price_usd | number | Price per call in USDC |
+| category | string | One of: data, compute, agent, utility |
+| network | string | One of: base-mainnet, base-sepolia |
+| description | string | Brief description of what the service does |
 
 ---
 
-## Code Contributions
+## 2. Report a Bug
 
-### Setup
+Open a [GitHub Issue](https://github.com/rplryan/x402-discovery-mcp/issues/new) with:
 
-```bash
-git clone https://github.com/rplryan/x402-discovery-mcp
-cd x402-discovery-mcp
-pip install -r requirements.txt
-```
-
-### Run Tests
-
-```bash
-python -m pytest tests/ -v
-```
-
-### Pull Request Guidelines
-
-1. Fork the repo and create a feature branch
-2. Make your changes with clear commit messages
-3. Ensure all tests pass
-4. Open a PR with a description of what changed and why
+- What you expected to happen
+- What actually happened
+- The MCP tool and arguments you used
+- The response you received
 
 ---
 
-## Reporting Issues
+## 3. Suggest a Feature
 
-- **Bug report**: [Open a bug issue](https://github.com/rplryan/x402-discovery-mcp/issues/new)
-- **Feature request**: Comment on the [Roadmap issue](https://github.com/rplryan/x402-discovery-mcp/issues) with a 👍
-- **Security issue**: Email x402scout@proton.me — do not open a public issue
+Check the [Roadmap issue](https://github.com/rplryan/x402-discovery-mcp/issues/3) where you can vote on candidate features with 👍.
 
 ---
 
-## Community
+## 4. Code Contributions
 
-Share what you built in the [Show and Tell discussion](https://github.com/rplryan/x402-discovery-mcp/discussions/1).
+1. Fork the repo
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Make your changes
+4. Run tests: `python -m pytest`
+5. Submit a PR with a clear description of what changed and why
 
-Questions? Open a discussion or email x402scout@proton.me.
+---
+
+## 5. Build an ERC-8004 Attested Service
+
+If you deploy an x402-payable API and want ERC-8004 trust scoring, reach out via a GitHub issue. We can walk you through the attestation process.
+
+---
+
+## Code of Conduct
+
+Be constructive. This is an early-stage ecosystem project — ideas and criticism are welcome, but keep it respectful.
+
+---
+
+*Built on the [Coinbase x402 protocol](https://github.com/coinbase/x402) | MIT License*
