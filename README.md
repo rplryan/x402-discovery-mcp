@@ -28,10 +28,10 @@
 | Tool | What It Does | Cost |
 |------|-------------|------|
 | `x402_discover` | Semantic search across 251+ services by keyword, category, max price | **$0.010 USDC** *(pays via x402 — eats its own dogfood)* |
-| `x402_health_check` | Real-time uptime + latency check for any service URL | Free |
+| `x402_health` | Real-time uptime + latency check for any service URL | Free |
 | `x402_register` | Register a new x402 service into the live catalog | Free |
-| `x402_trust` | ERC-8004 trust score and reputation signals for a service | Free |
-| `x402_facilitator_check` | Verify facilitator compatibility before committing to a payment | Free |
+| `x402_attest` | ERC-8004 trust score and reputation signals for a service | Free |
+| `x402_browse` | Verify facilitator compatibility before committing to a payment | Free |
 
 ---
 
@@ -142,11 +142,11 @@ result = x402_discover(
 # Returns: ranked list with price, uptime %, latency, llm_usage_prompt
 
 # 2. Verify the top result is facilitator-compatible before paying
-compat = x402_facilitator_check(url=result[0]["url"])
+compat = x402_browse(url=result[0]["url"])
 # Returns: {facilitator_compatible: true, payment_details: {...}}
 
 # 3. Check live health before committing
-health = x402_health_check(url=result[0]["url"])
+health = x402_health(url=result[0]["url"])
 # Returns: {status: "healthy", latency_ms: 142, uptime_pct: 99.1}
 
 # 4. Now pay via x402 — agent proceeds with confidence
@@ -222,8 +222,8 @@ Or use the `x402_register` MCP tool from inside Claude/Cursor/Windsurf.
 ┌─────────────────────────────────────────────────────┐
 │              AI Agent (Claude / Cursor / Windsurf)  │
 │                                                     │
-│  x402_discover → x402_health_check → x402_trust     │
-│  x402_facilitator_check → x402_register             │
+│  x402_discover → x402_health → x402_attest     │
+│  x402_browse → x402_register             │
 └───────────────────┬─────────────────────────────────┘
                     │ MCP (stdio/Docker)
 ┌───────────────────▼─────────────────────────────────┐
