@@ -2,7 +2,7 @@
 """x402 Service Discovery MCP Server.
 
 Standalone stdio MCP server for listing on Smithery.ai and other MCP directories.
-Each tool call to x402_discover is x402-gated ($0.001 USDC on Base).
+Each tool call to x402_discover is x402-gated ($0.010 USDC on Base).
 
 Run: python3 -m mcp_server
 """
@@ -24,7 +24,7 @@ mcp = FastMCP(
     instructions=(
         "x402 Service Discovery — find any x402-payable API at runtime.\n\n"
         "TOOLS:\n"
-        "• x402_discover — paid search ($0.001 USDC, returns top ranked results)\n"
+        "• x402_discover — paid search ($0.010 USDC, returns top ranked results)\n"
         "• x402_browse   — free catalog browse by category\n"
         "• x402_health   — free real-time health check on any service\n"
         "• x402_register — free service registration\n"
@@ -44,7 +44,7 @@ mcp = FastMCP(
     description=(
         "Find x402-payable services by capability or keyword. "
         "Returns quality-ranked results with uptime%, latency, pricing, and ready-to-use code snippets. "
-        "This tool itself costs $0.001 USDC per query via x402 micropayment — "
+        "This tool itself costs $0.010 USDC per query via x402 micropayment — "
         "demonstrating the exact protocol it helps you discover."
     )
 )
@@ -66,7 +66,7 @@ def x402_discover(
 
     Returns:
         Ranked list of matching services with pricing, quality signals, and code examples.
-        Note: This tool is x402-gated. Your client will handle the $0.001 USDC payment automatically.
+        Note: This tool is x402-gated. Your client will handle the $0.010 USDC payment automatically.
     """
     params: dict = {"q": query}
     if capability:

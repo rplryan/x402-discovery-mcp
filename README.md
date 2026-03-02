@@ -26,7 +26,7 @@
 
 | Tool | What It Does | Cost |
 |------|-------------|------|
-| `x402_discover` | Semantic search across 251+ services by keyword, category, max price | **$0.005 USDC** *(pays via x402 — eats its own dogfood)* |
+| `x402_discover` | Semantic search across 251+ services by keyword, category, max price | **$0.010 USDC** *(pays via x402 — eats its own dogfood)* |
 | `x402_health_check` | Real-time uptime + latency check for any service URL | Free |
 | `x402_register` | Register a new x402 service into the live catalog | Free |
 | `x402_trust` | ERC-8004 trust score and reputation signals for a service | Free |
@@ -165,7 +165,7 @@ This project is a direct implementation of two items from Coinbase's own public 
 **From the CDP x402 facilitator roadmap:**
 > *"A discovery layer for buyers (human and agents) to find available services (Bazaar)"*
 
-We built the community Bazaar. It's live. It has 251+ services. It has quality signals the official page doesn't. And it **uses x402 payments itself** — `x402_discover` costs $0.005 USDC, paid via the protocol it serves.
+We built the community Bazaar. It's live. It has 251+ services. It has quality signals the official page doesn't. And it **uses x402 payments itself** — `x402_discover` costs $0.010 USDC, paid via the protocol it serves.
 
 ### What We've Shipped (11 days)
 
@@ -204,7 +204,7 @@ curl -X POST https://x402-discovery-api.onrender.com/register \
   -d '{
     "name": "My Service",
     "url": "https://myservice.example.com/api",
-    "price_usd": 0.005,
+    "price_usd": 0.010,
     "category": "data",
     "description": "What your service does",
     "network": "base-mainnet"
