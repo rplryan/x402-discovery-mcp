@@ -14,6 +14,8 @@
   <img width="380" height="200" src="https://glama.ai/mcp/servers/@rplryan/x402-discovery-mcp/badge" />
 </a>
 
+![Claude calling x402_discover and getting live results](https://github.com/rplryan/x402-discovery-mcp/releases/download/v1.0.0-demo/readme_demo.gif)
+
 ---
 
 ## What This Is (30 seconds)
@@ -261,3 +263,4 @@ MIT
 ---
 
 *Built on [Coinbase x402 protocol](https://github.com/coinbase/x402) | Base Network | ERC-8004 | Model Context Protocol*
+
