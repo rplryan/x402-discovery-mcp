@@ -246,6 +246,14 @@ Or use the `x402_register` MCP tool from inside Claude/Cursor/Windsurf.
 
 ---
 
+## 💬 Community
+
+Built something with x402 Service Discovery? Found a service that should be in the catalog? Share it in our [**Show and Tell discussion thread**](https://github.com/rplryan/x402-discovery-mcp/discussions/1).
+
+[![Join the discussion](https://img.shields.io/badge/GitHub-Join%20the%20Discussion-blue?logo=github)](https://github.com/rplryan/x402-discovery-mcp/discussions/1)
+
+---
+
 ## License
 
 MIT
