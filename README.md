@@ -7,14 +7,8 @@
 [![API Status](https://img.shields.io/badge/API-Live%20v3.3.0-brightgreen)](https://x402-discovery-api.onrender.com)
 [![Services Indexed](https://img.shields.io/badge/Services%20Indexed-251%2B-brightgreen)](https://x402-discovery-api.onrender.com/.well-known/x402-discovery)
 [![mcp.so](https://img.shields.io/badge/mcp.so-Submitted-orange)](https://mcp.so/server/x402-discovery-mcp)
-[![Glama](https://img.shields.io/badge/Glama-Live-brightgreen)](https://glama.ai/mcp/servers/@rplryan/x402-discovery-mcp)
+[![Glama](https://img.shields.io/badge/Glama-Under%20Review-orange)](https://glama.ai/mcp/servers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-<a href="https://glama.ai/mcp/servers/@rplryan/x402-discovery-mcp">
-  <img width="380" height="200" src="https://glama.ai/mcp/servers/@rplryan/x402-discovery-mcp/badge" />
-</a>
-
-![Claude calling x402_discover and getting live results](https://github.com/rplryan/x402-discovery-mcp/releases/download/v1.0.0-demo/readme_demo.gif)
 
 ---
 
@@ -248,14 +242,6 @@ Or use the `x402_register` MCP tool from inside Claude/Cursor/Windsurf.
 
 ---
 
-## 💬 Community
-
-Built something with x402 Service Discovery? Found a service that should be in the catalog? Share it in our [**Show and Tell discussion thread**](https://github.com/rplryan/x402-discovery-mcp/discussions/1).
-
-[![Join the discussion](https://img.shields.io/badge/GitHub-Join%20the%20Discussion-blue?logo=github)](https://github.com/rplryan/x402-discovery-mcp/discussions/1)
-
----
-
 ## License
 
 MIT
@@ -263,4 +249,3 @@ MIT
 ---
 
 *Built on [Coinbase x402 protocol](https://github.com/coinbase/x402) | Base Network | ERC-8004 | Model Context Protocol*
-
