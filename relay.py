@@ -26,7 +26,7 @@ from x402.http.clients import x402HttpxClient
 from eth_account import Account
 
 DISCOVERY_API = os.getenv("DISCOVERY_API_URL", "https://x402-discovery-api.onrender.com")
-RELAY_VERSION = "2.0.0"
+RELAY_VERSION = "2.1.0"
 RELAY_PRICE_USD = float(os.getenv("RELAY_PRICE_USD", "0.003"))
 RELAY_RATE = 0.025  # 2.5% of downstream transaction value
 MIN_TRUST_SCORE = int(os.getenv("RELAY_MIN_TRUST_SCORE", "50"))
