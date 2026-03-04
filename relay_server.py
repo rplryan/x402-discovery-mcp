@@ -25,7 +25,7 @@ app = FastAPI(
 
 # x402 payment gate config
 RELAY_PRICE_USD = float(os.getenv("RELAY_PRICE_USD", "0.003"))
-WALLET_ADDRESS = os.getenv("WALLET_ADDRESS", "")
+WALLET_ADDRESS = os.getenv("CDP_WALLET_ADDRESS", os.getenv("WALLET_ADDRESS", ""))
 # USDC on Base: 6 decimals, $0.003 = 3000 atomic units
 RELAY_PRICE_ATOMIC = int(RELAY_PRICE_USD * 1_000_000)
 USDC_BASE_CONTRACT = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
