@@ -123,7 +123,7 @@ def _discover_providers(
     return candidates
 
 
-def relay_route(
+async def relay_route(
     intent: str,
     budget_usd: float,
     wallet: Optional[str] = None,
@@ -171,7 +171,7 @@ def relay_route(
             last_error = f"Provider {name} costs ${price:.4f}, exceeds remaining budget"
             continue
 
-        exec_result = asyncio.run(_execute_payment(url, price))
+        exec_result = await _execute_payment(url, price)
 
         _log_spend({
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -222,9 +222,9 @@ def relay_route(
     )
 
 
-def relay_execute(endpoint_url: str, amount_usdc: float, wallet: Optional[str] = None) -> dict:
+async def relay_execute(endpoint_url: str, amount_usdc: float, wallet: Optional[str] = None) -> dict:
     """Direct execution against a known x402 endpoint. Skips discovery/ranking."""
-    result = asyncio.run(_execute_payment(endpoint_url, amount_usdc))
+    result = await _execute_payment(endpoint_url, amount_usdc)
     _log_spend({
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "intent": "direct_execute",
@@ -236,12 +236,12 @@ def relay_execute(endpoint_url: str, amount_usdc: float, wallet: Optional[str] =
     return result
 
 
-def relay_discover(capability: str, max_price_usd: float = 0.50, min_trust_score: int = MIN_TRUST_SCORE) -> list:
+async def relay_discover(capability: str, max_price_usd: float = 0.50, min_trust_score: int = MIN_TRUST_SCORE) -> list:
     """Thin wrapper over discovery catalog. Returns ranked providers without executing."""
     return _discover_providers(capability, max_price_usd, min_trust_score)
 
 
-def relay_audit(limit: int = 50) -> list:
+async def relay_audit(limit: int = 50) -> list:
     """Return last N spend log entries."""
     try:
         with open(SPEND_LOG_PATH) as f:
