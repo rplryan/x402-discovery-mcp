@@ -2,11 +2,10 @@
 
 > 🛰️ Terminal search & discovery client for the x402 agent economy
 
-[![npm](https://img.shields.io/badge/npm-%40rplryan%2Fx402scout-brightgreen)](https://github.com/rplryan/x402-discovery-mcp/pkgs/npm/x402scout)
+[![npm](https://img.shields.io/npm/v/x402scout.svg)](https://www.npmjs.com/package/x402scout)
 
 ```bash
-# Install globally (requires GitHub Packages auth)
-npm install -g @rplryan/x402scout --registry=https://npm.pkg.github.com
+npm install -g x402scout
 ```
 
 ## Commands
@@ -82,8 +81,14 @@ x402scout stats
   Source: x402scout.com · Updates every 6h · 343 services
 ```
 
-## Install via GitHub Packages
+## Install
 
+**Recommended (npmjs.com):** No auth required
+```bash
+npm install -g x402scout
+```
+
+**Alternative (GitHub Packages):**
 1. Create a GitHub Personal Access Token with `read:packages` scope
 2. Add to `~/.npmrc`:
    ```
@@ -106,7 +111,7 @@ node bin/x402scout.js stats
 
 ## API
 
-All data comes from [x402scout.com](https://x402scout.com) — 340+ live x402-enabled services, updated every 6 hours.
+All data comes from [x402scout.com](https://x402scout.com) — 343+ live x402-enabled services, updated every 6 hours.
 
 **Trust Score** (0–100) is computed from:
 - Uptime percentage (40%)
