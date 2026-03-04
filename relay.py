@@ -338,7 +338,7 @@ async def relay_route(
         rec = budgets.get(resolved_agent_id, {})
         return RouteResult(
             success=False,
-            error=f"Agent daily budget of ${cap:.2f}/day exceeded. Spent: ${rec.get(\'daily_spent\', 0):.4f}",
+            error="Agent daily budget exceeded. Spent: {:0.4f}".format(rec.get("daily_spent", 0)),
             error_code="daily_budget_exceeded",
             agent_id=resolved_agent_id,
         )
@@ -347,7 +347,7 @@ async def relay_route(
     if not providers:
         return RouteResult(
             success=False,
-            error=f"No providers found for \'{intent}\' under ${effective_budget:.4f} with trust_score >= {min_trust_score}",
+            error="No providers found for {} under ${:.4f} with trust_score >= {}".format(intent, effective_budget, min_trust_score),
             error_code="all_providers_failed",
             agent_id=resolved_agent_id,
         )
