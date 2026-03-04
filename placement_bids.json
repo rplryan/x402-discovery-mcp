@@ -1,0 +1,10 @@
+[
+  {
+    "_comment": "Schema reference — this entry is inactive. Remove _comment and set active=true to enable.",
+    "provider_url": "https://example-x402-service.com/api",
+    "bid_per_tx_usd": 0.001,
+    "provider_name": "Example Service",
+    "contact_email": "provider@example.com",
+    "active": false
+  }
+]
