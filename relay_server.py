@@ -1,253 +1,295 @@
 """
-scout_relay REST API — Render deployment entrypoint.
-Exposes relay routing as HTTP endpoints for direct API access.
-x402 payment gate on /route — $0.003 per call.
-
-Phase 2: agent_id tracking, budget enforcement, enhanced /audit endpoint,
-placement_bids.json loaded at startup.
+scout_relay REST API — Render deployment entrypoint v2.1.0
+Exposes relay routing as HTTP endpoints + provider self-serve placement bids.
 """
-import os
 import json
-import base64
-import hashlib
+import logging
+import os
 import time
+from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-import uvicorn
+from pydantic import BaseModel, Field
 
+# ── local relay logic ───────────────────────────────────────────────────────
 from relay import (
     relay_route,
     relay_discover,
     relay_execute,
     relay_audit,
-    get_agent_budget_status,
-    _load_placement_bids,
     RELAY_VERSION,
     RELAY_PRICE_USD,
 )
 
+log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+
+# ── config ──────────────────────────────────────────────────────────────────
+PORT = int(os.environ.get("PORT", 10000))
+WALLET_ADDRESS = os.environ.get("CDP_WALLET_ADDRESS") or os.environ.get("WALLET_ADDRESS", "")
+USEC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base
+
+BIDS_FILE = Path("/tmp/placement_bids.json")
+BIDS_REGISTRATION_FEE_USD = float(os.environ.get("BID_REGISTRATION_FEE_USD", "0.01"))
+
+
+# ── helpers ─────────────────────────────────────────────────────────────────
+def _build_402_response(amount_usd: float) -> dict:
+    """Build a 402 Payment Required response for the given amount."""
+    amount_atomic = int(amount_usd * 1_000_000)
+    return {
+        "x402Version": 1,
+        "error": "Payment required",
+        "accepts": [{
+            "scheme": "exact",
+            "network": "base-mainnet",
+            "maxAmountRequired": str(amount_atomic),
+            "resource": "",
+            "description": f"scout_relay service fee ${amount_usd:.4f}",
+            "mimeType": "application/json",
+            "payTo": WALLET_ADDRESS,
+            "maxTimeoutSeconds": 60,
+            "asset": USEC_BASE,
+            "extra": {
+                "name": "USD Coin",
+                "version": "2",
+            },
+        }],
+    }
+
+
+def _load_bids() -> dict:
+    """Load placement_bids.json, return {} if missing or corrupt."""
+    try:
+        if BIDS_FILE.exists():
+            return json.loads(BIDS_FILE.read_text())
+    except Exception:
+        pass
+    return {}
+
+
+def _save_bids(bids: dict) -> None:
+    BIDS_FILE.write_text(json.dumps(bids, indent=2))
+
+
+# ── lifespan ────────────────────────────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    log.info("scout_relay v%s starting on port %d", RELAY_VERSION, PORT)
+    yield
+
+
+# ── app ─────────────────────────────────────────────────────────────────────
 app = FastAPI(
     title="scout_relay",
-    description="Intelligent payment router for AI agents. Built on x402-discovery-mcp.",
+    description="x402 routing and execution layer for the x402Scout ecosystem",
     version=RELAY_VERSION,
+    lifespan=lifespan,
 )
 
-# x402 payment gate config
-WALLET_ADDRESS = os.getenv("CDP_WALLET_ADDRESS", os.getenv("WALLET_ADDRESS", ""))
-# USDC on Base: 6 decimals, $0.003 = 3000 atomic units
-RELAY_PRICE_ATOMIC = int(RELAY_PRICE_USD * 1_000_000)
-USDC_BASE_CONTRACT = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
-BASE_CHAIN_ID = 8453
 
-
-@app.on_event("startup")
-async def startup_event():
-    """Pre-load placement bids on startup."""
-    bids = _load_placement_bids()
-    print(f"[scout_relay] v{RELAY_VERSION} started. Wallet: {WALLET_ADDRESS}. Placement bids loaded: {len(bids)}")
-
-
-def _build_402_response(request: Request) -> JSONResponse:
-    """Return x402-compliant payment required response."""
-    nonce = hashlib.sha256(f"{time.time()}{request.url}".encode()).hexdigest()[:16]
-    return JSONResponse(
-        status_code=402,
-        content={
-            "x402Version": 1,
-            "error": "Payment required for /route",
-            "accepts": [
-                {
-                    "scheme": "exact",
-                    "network": "base-mainnet",
-                    "maxAmountRequired": str(RELAY_PRICE_ATOMIC),
-                    "resource": str(request.url),
-                    "description": f"scout_relay routing — ${RELAY_PRICE_USD} per call",
-                    "mimeType": "application/json",
-                    "payTo": WALLET_ADDRESS,
-                    "maxTimeoutSeconds": 300,
-                    "asset": USDC_BASE_CONTRACT,
-                    "extra": {
-                        "name": "USD Coin",
-                        "version": "2",
-                        "chainId": BASE_CHAIN_ID,
-                    },
-                }
-            ],
-        },
-        headers={
-            "X-Payment-Required": "true",
-            "X-Payment-Amount": str(RELAY_PRICE_USD),
-            "X-Payment-Asset": "USDC",
-            "X-Payment-Network": "base-mainnet",
-        },
-    )
-
-
-def _verify_payment_header(payment_header: str) -> bool:
-    """Verify X-Payment header. Returns True if payment appears valid."""
-    if not payment_header:
-        return False
-    try:
-        decoded = base64.b64decode(payment_header).decode()
-        data = json.loads(decoded)
-        return bool(data.get("scheme") and data.get("payload"))
-    except Exception:
-        return False
-
-
-# ---------------------------------------------------------------------------
-# Request models
-# ---------------------------------------------------------------------------
-
+# ── models ──────────────────────────────────────────────────────────────────
 class RouteRequest(BaseModel):
     intent: str
-    budget_usd: float
-    wallet: Optional[str] = None
-    min_trust_score: int = 50
-    agent_id: Optional[str] = None  # Phase 2
+    budget_usd: float = Field(default=1.0, ge=0.001)
+    agent_id: Optional[str] = None
+    wallet_address: Optional[str] = None
+    private_key: Optional[str] = None
 
 
 class ExecuteRequest(BaseModel):
-    endpoint_url: str
-    amount_usdc: float
-    wallet: Optional[str] = None
-    agent_id: Optional[str] = None  # Phase 2
+    url: str
+    amount_usd: float = Field(default=0.01, ge=0.0001)
+    agent_id: Optional[str] = None
+    wallet_address: Optional[str] = None
+    private_key: Optional[str] = None
 
 
-# ---------------------------------------------------------------------------
-# Endpoints
-# ---------------------------------------------------------------------------
+class PlacementBidRequest(BaseModel):
+    capability_category: str = Field(
+        ...,
+        description="Category of service capability (e.g. 'crypto_prices', 'data', 'agent')",
+    )
+    bid_per_transaction: float = Field(
+        ..., ge=0.0001,
+        description="Fee paid to scout_relay per transaction routed to this provider",
+    )
+    wallet_address: str = Field(
+        ...,
+        description="Provider's wallet address (Base USDC) for settlement",
+    )
+    provider_id: str = Field(
+        ...,
+        description="Unique identifier for this provider (e.g. service name or URL slug)",
+    )
+    service_url: Optional[str] = Field(
+        default=None,
+        description="Service URL — must already be registered in x402Scout catalog",
+    )
+    contact_email: Optional[str] = None
+
+
+# ── middleware: x402 gate ────────────────────────────────────────────────────
+GATED_PATHS = {"/route", "/execute"}
+
+
+@app.middleware("http")
+async def x402_gate(request: Request, call_next):
+    if request.method == "POST" and request.url.path in GATED_PATHS:
+        payment_header = request.headers.get("X-Payment")
+        if not payment_header:
+            return JSONResponse(
+                status_code=402,
+                content=_build_402_response(RELAY_PRICE_USD),
+                headers={"x402Version": "1"},
+            )
+    return await call_next(request)
+
+
+# ── routes ───────────────────────────────────────────────────────────────────
+@app.get("/health")
+async def health():
+    return {
+        "status": "healthy",
+        "version": RELAY_VERSION,
+        "relay_price_usd": RELAY_PRICE_USD,
+        "wallet_address": WALLET_ADDRESS,
+        "bids_active": len(_load_bids()),
+    }
+
 
 @app.get("/")
-def root():
-    bids = _load_placement_bids()
+async def root():
     return {
         "service": "scout_relay",
         "version": RELAY_VERSION,
-        "description": "Intelligent payment router for AI agents",
-        "pricing": f"${RELAY_PRICE_USD} per /route call (USDC on Base)",
-        "endpoints": [
-            "/route (POST, x402-gated)",
-            "/discover (GET)",
-            "/execute (POST)",
-            "/audit (GET)",
-            "/health (GET)",
-        ],
-        "discovery_api": os.getenv("DISCOVERY_API_URL", "https://x402-discovery-api.onrender.com"),
-        "wallet": WALLET_ADDRESS,
-        "active_placement_bids": len(bids),
+        "wallet_address": WALLET_ADDRESS,
+        "endpoints": ["/route", "/execute", "/discover", "/audit", "/placement/bid", "/placement/bids", "/health"],
+        "docs": "/docs",
     }
-
-
-@app.get("/health")
-def health():
-    return {"status": "healthy", "version": RELAY_VERSION}
 
 
 @app.post("/route")
-async def route(req: RouteRequest, request: Request):
-    # x402 gate — require payment header
-    payment_header = request.headers.get("X-Payment", "")
-    if not WALLET_ADDRESS:
-        pass  # dev mode: wallet not configured
-    elif not payment_header:
-        return _build_402_response(request)
-    elif not _verify_payment_header(payment_header):
-        return JSONResponse(
-            status_code=402,
-            content={"error": "Invalid or malformed X-Payment header"},
-        )
-
-    result = await relay_route(
+async def route(req: RouteRequest):
+    result = relay_route(
         intent=req.intent,
         budget_usd=req.budget_usd,
-        wallet=req.wallet,
-        min_trust_score=req.min_trust_score,
         agent_id=req.agent_id,
-        payment_header=payment_header or None,
-    )
-
-    # Phase 2: daily_budget_exceeded returns 429
-    if result.error_code == "daily_budget_exceeded":
-        budgets_data = {}  # already loaded inside relay_route
-        return JSONResponse(
-            status_code=429,
-            content={
-                "error": "daily_budget_exceeded",
-                "limit": float(os.getenv("AGENT_DAILY_BUDGET_USD", "10.0")),
-                "message": result.error,
-                "agent_id": result.agent_id,
-            },
-        )
-
-    response_data = {
-        "success": result.success,
-        "data": result.data,
-        "provider": result.provider_name,
-        "provider_url": result.provider_url,
-        "cost_paid_usd": round(result.cost_paid_usd, 6),
-        "relay_fee_usd": round(result.relay_fee_usd, 6),
-        "placement_bid_applied": result.placement_bid_applied,
-        "agent_id": result.agent_id,
-        "attempts": result.attempts,
-        "error": result.error or None,
-        "error_code": result.error_code or None,
-    }
-
-    if payment_header:
-        response_data["payment_received"] = True
-
-    return JSONResponse(
-        status_code=200,
-        content=response_data,
-        headers={"X-Payment-Response": base64.b64encode(json.dumps({"success": True}).encode()).decode()},
-    )
-
-
-@app.get("/discover")
-async def discover(capability: str, max_price_usd: float = 0.50, min_trust_score: int = 50):
-    providers = await relay_discover(capability, max_price_usd, min_trust_score)
-    return {"providers": providers, "count": len(providers)}
-
-
-@app.post("/execute")
-async def execute(req: ExecuteRequest, request: Request):
-    payment_header = request.headers.get("X-Payment", "")
-    result = await relay_execute(
-        endpoint_url=req.endpoint_url,
-        amount_usdc=req.amount_usdc,
-        wallet=req.wallet,
-        agent_id=req.agent_id,
-        payment_header=payment_header or None,
+        wallet_address=req.wallet_address,
+        private_key=req.private_key,
     )
     return result
 
 
-@app.get("/audit")
-async def audit(
-    agent_id: Optional[str] = None,
-    since: Optional[str] = None,
-    limit: int = 100,
-):
-    """Phase 2: filtered audit log with agent_id, since, and limit query params."""
-    entries = await relay_audit(
-        limit=min(limit, 500),
-        agent_id=agent_id,
-        since=since,
+@app.post("/execute")
+async def execute(req: ExecuteRequest):
+    result = relay_execute(
+        url=req.url,
+        amount_usd=req.amount_usd,
+        agent_id=req.agent_id,
+        wallet_address=req.wallet_address,
+        private_key=req.private_key,
     )
-    response: dict = {
-        "transactions": entries,
-        "count": len(entries),
+    return result
+
+
+@app.get("/discover")
+async def discover(intent: str = "", limit: int = 10):
+    return relay_discover(intent=intent, limit=limit)
+
+
+@app.get("/audit")
+async def audit(agent_id: Optional[str] = None, limit: int = 50):
+    return relay_audit(agent_id=agent_id, limit=limit)
+
+
+# ── placement bid endpoints ───────────────────────────────────────────────────
+
+@app.post("/placement/bid")
+async def placement_bid(req: PlacementBidRequest, request: Request):
+    """
+    x402-gated provider self-serve bid registration.
+    Providers pay BID_REGISTRATION_FEE_USD (default $0.01) to register a placement bid.
+    Payment is required via X-Payment header (x402 standard).
+    Once paid, the bid is written to placement_bids.json and takes effect immediately
+    via hot-reload in relay.py.
+    """
+    # Check x402 payment header
+    payment_header = request.headers.get("X-Payment")
+    if not payment_header:
+        return JSONResponse(
+            status_code=402,
+            content=_build_402_response(BIDS_REGISTRATION_FEE_USD),
+            headers={"x402Version": "1"},
+        )
+
+    # Load existing bids
+    bids = _load_bids()
+
+    # Upsert the bid
+    provider_key = req.provider_id
+    bids[provider_key] = {
+        "capability_category": req.capability_category,
+        "bid_per_transaction": req.bid_per_transaction,
+        "wallet_address": req.wallet_address,
+        "provider_id": req.provider_id,
+        "service_url": req.service_url,
+        "contact_email": req.contact_email,
+        "registered_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "payment_header_preview": payment_header[:20] + "..." if len(payment_header) > 20 else payment_header,
+        "active": True,
     }
-    # Include budget status if agent_id provided
-    if agent_id:
-        response["agent_budget"] = get_agent_budget_status(agent_id)
-    return response
+
+    _save_bids(bids)
+
+    log.info(
+        "Placement bid registered: provider=%s category=%s bid=$%.4f",
+        req.provider_id,
+        req.capability_category,
+        req.bid_per_transaction,
+    )
+
+    return {
+        "status": "registered",
+        "provider_id": req.provider_id,
+        "capability_category": req.capability_category,
+        "bid_per_transaction": req.bid_per_transaction,
+        "message": (
+            f"Bid registered. Routing tiebreaker active immediately. "
+            f"Settlement occurs monthly via Base USDC to {req.wallet_address}."
+        ),
+        "total_bids_active": len([b for b in bids.values() if b.get("active")]),
+    }
 
 
+@app.get("/placement/bids")
+async def get_placement_bids():
+    """
+    Read-only view of all active placement bids.
+    Public — allows providers to see current competition.
+    """
+    bids = _load_bids()
+    active_bids = [
+        {
+            "provider_id": v["provider_id"],
+            "capability_category": v["capability_category"],
+            "bid_per_transaction": v["bid_per_transaction"],
+            "service_url": v.get("service_url"),
+            "registered_at": v.get("registered_at"),
+        }
+        for v in bids.values()
+        if v.get("active")
+    ]
+    return {
+        "total_active_bids": len(active_bids),
+        "bids": sorted(active_bids, key=lambda x: x["bid_per_transaction"], reverse=True),
+    }
+
+
+# ── entrypoint ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    import uvicorn
+    uvicorn.run("relay_server:app", host="0.0.0.0", port=PORT, log_level="info")
