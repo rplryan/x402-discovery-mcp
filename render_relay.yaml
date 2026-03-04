@@ -2,7 +2,6 @@ services:
   - type: web
     name: x402-scout-relay
     env: python
-    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: python relay_server.py
     envVars:
@@ -13,4 +12,6 @@ services:
       - key: RELAY_MIN_TRUST_SCORE
         value: "50"
       - key: PORT
-        value: "8000"
+        value: "10000"
+      - key: EVM_PRIVATE_KEY
+        sync: false

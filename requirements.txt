@@ -4,3 +4,5 @@ httpx>=0.27.0
 fastapi>=0.115.0
 uvicorn>=0.32.0
 pydantic>=2.0.0
+x402[evm]>=0.1.0
+eth-account>=0.13.0

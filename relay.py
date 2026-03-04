@@ -2,16 +2,22 @@
 scout_relay — Intelligent Payment Router for AI Agents
 Routing + execution logic. Imported by relay_tools.py for MCP registration.
 """
+import asyncio
 import json
 import logging
 import os
-import subprocess
-import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Optional
 
 import httpx
+
+# x402 Python SDK (headless, stateless — no subprocess, no session files)
+from x402 import x402Client
+from x402.mechanisms.evm import EthAccountSigner
+from x402.mechanisms.evm.exact.register import register_exact_evm_client
+from x402.http.clients import x402HttpxClient
+from eth_account import Account
 
 DISCOVERY_API = os.getenv("DISCOVERY_API_URL", "https://x402-discovery-api.onrender.com")
 RELAY_VERSION = "1.0.0"
@@ -33,7 +39,7 @@ class RouteResult:
     provider_name: str = ""
     attempts: int = 0
     error: str = ""
-    error_code: str = ""  # budget_exceeded | all_providers_failed | awal_timeout | discovery_error
+    error_code: str = ""  # budget_exceeded | all_providers_failed | payment_timeout | sdk_error | discovery_error
 
 
 def _compute_relay_fee(downstream_usd: float) -> float:
@@ -47,6 +53,47 @@ def _log_spend(entry: dict) -> None:
             f.write(json.dumps(entry) + "\n")
     except Exception as e:
         logger.warning(f"Failed to write spend log: {e}")
+
+
+def _get_x402_client() -> x402Client:
+    """Build a stateless x402Client from EVM_PRIVATE_KEY env var."""
+    private_key = os.environ.get("EVM_PRIVATE_KEY")
+    if not private_key:
+        raise ValueError("EVM_PRIVATE_KEY env var not set")
+    account = Account.from_key(private_key)
+    client = x402Client()
+    register_exact_evm_client(client, EthAccountSigner(account))
+    return client
+
+
+async def _execute_payment(endpoint_url: str, amount_usdc: float, timeout: int = 30) -> dict:
+    """
+    Execute x402 payment via the x402 Python SDK. Fully headless and stateless.
+    The SDK auto-handles the 402 challenge → EIP-3009 signed payment → retry cycle.
+    Returns {"success": bool, "output": str, "error": str}
+    """
+    try:
+        client = _get_x402_client()
+        async with x402HttpxClient(client) as http:
+            response = await asyncio.wait_for(
+                http.get(endpoint_url),
+                timeout=timeout,
+            )
+            await response.aread()
+            if response.is_success:
+                return {"success": True, "output": response.text, "error": ""}
+            return {
+                "success": False,
+                "output": "",
+                "error": f"HTTP {response.status_code}: {response.text[:200]}",
+            }
+    except asyncio.TimeoutError:
+        return {"success": False, "output": "", "error": "payment_timeout"}
+    except ValueError as e:
+        # EVM_PRIVATE_KEY not set or invalid
+        return {"success": False, "output": "", "error": f"sdk_error: {e}"}
+    except Exception as e:
+        return {"success": False, "output": "", "error": f"sdk_error: {e}"}
 
 
 def _discover_providers(
@@ -76,32 +123,6 @@ def _discover_providers(
     return candidates
 
 
-def _execute_via_awal(endpoint_url: str, amount_usdc: float, timeout: int = 30) -> dict:
-    """
-    Execute x402 payment via Coinbase Agentic Wallet CLI subprocess.
-    Returns {"success": bool, "output": str, "error": str}
-
-    If awal is unavailable, falls back to a structured error (caller handles fallback).
-    Note: awal authenticate is ONE-TIME interactive. Subsequent calls are headless.
-    """
-    try:
-        result = subprocess.run(
-            ["npx", "awal", "pay-for-service",
-             "--endpoint", endpoint_url,
-             "--amount", str(amount_usdc)],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-        if result.returncode == 0:
-            return {"success": True, "output": result.stdout.strip(), "error": ""}
-        return {"success": False, "output": "", "error": result.stderr.strip() or result.stdout.strip()}
-    except subprocess.TimeoutExpired:
-        return {"success": False, "output": "", "error": "awal_timeout"}
-    except FileNotFoundError:
-        return {"success": False, "output": "", "error": "awal_not_installed"}
-
-
 def relay_route(
     intent: str,
     budget_usd: float,
@@ -110,7 +131,7 @@ def relay_route(
     max_attempts: int = MAX_RETRY_ATTEMPTS,
 ) -> RouteResult:
     """
-    Core routing function. Discovers providers, selects best, executes via awal.
+    Core routing function. Discovers providers, selects best, executes via x402 Python SDK.
     Retries up to max_attempts with next-ranked provider on failure.
     """
     if budget_usd <= 0:
@@ -150,7 +171,7 @@ def relay_route(
             last_error = f"Provider {name} costs ${price:.4f}, exceeds remaining budget"
             continue
 
-        exec_result = _execute_via_awal(url, price)
+        exec_result = asyncio.run(_execute_payment(url, price))
 
         _log_spend({
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -175,11 +196,18 @@ def relay_route(
             )
 
         err = exec_result.get("error", "unknown")
-        if err == "awal_timeout":
+        if err == "payment_timeout":
             return RouteResult(
                 success=False,
                 error="Payment execution timed out — not retrying to avoid duplicate charges",
-                error_code="awal_timeout",
+                error_code="payment_timeout",
+                attempts=attempts,
+            )
+        if err.startswith("sdk_error: EVM_PRIVATE_KEY"):
+            return RouteResult(
+                success=False,
+                error="EVM_PRIVATE_KEY not configured on this relay — payment execution unavailable",
+                error_code="sdk_error",
                 attempts=attempts,
             )
 
@@ -196,7 +224,7 @@ def relay_route(
 
 def relay_execute(endpoint_url: str, amount_usdc: float, wallet: Optional[str] = None) -> dict:
     """Direct execution against a known x402 endpoint. Skips discovery/ranking."""
-    result = _execute_via_awal(endpoint_url, amount_usdc)
+    result = asyncio.run(_execute_payment(endpoint_url, amount_usdc))
     _log_spend({
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "intent": "direct_execute",
