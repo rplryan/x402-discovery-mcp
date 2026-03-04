@@ -127,7 +127,7 @@ async def route(req: RouteRequest, request: Request):
             content={"error": "Invalid or malformed X-Payment header"},
         )
 
-    result = relay_route(req.intent, req.budget_usd, req.wallet, req.min_trust_score)
+    result = await relay_route(req.intent, req.budget_usd, req.wallet, req.min_trust_score)
     response_data = {
         "success": result.success,
         "data": result.data,
@@ -152,20 +152,20 @@ async def route(req: RouteRequest, request: Request):
 
 
 @app.get("/discover")
-def discover(capability: str, max_price_usd: float = 0.50, min_trust_score: int = 50):
-    providers = relay_discover(capability, max_price_usd, min_trust_score)
+async def discover(capability: str, max_price_usd: float = 0.50, min_trust_score: int = 50):
+    providers = await relay_discover(capability, max_price_usd, min_trust_score)
     return {"providers": providers, "count": len(providers)}
 
 
 @app.post("/execute")
-def execute(req: ExecuteRequest):
-    result = relay_execute(req.endpoint_url, req.amount_usdc, req.wallet)
+async def execute(req: ExecuteRequest):
+    result = await relay_execute(req.endpoint_url, req.amount_usdc, req.wallet)
     return result
 
 
 @app.get("/audit")
-def audit(limit: int = 20):
-    entries = relay_audit(min(limit, 100))
+async def audit(limit: int = 20):
+    entries = await relay_audit(min(limit, 100))
     return {"transactions": entries, "count": len(entries)}
 
 
