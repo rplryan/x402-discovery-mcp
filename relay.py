@@ -114,11 +114,11 @@ def _discover_providers(
         logger.error(f"Discovery API error: {e}")
         return []
 
-    services = data.get("services", [])
+    services = data.get("endpoints", [])
     candidates = [
         s for s in services
         if s.get("trust_score", 0) >= min_trust_score
-        and float(s.get("price_per_call", 9999)) <= max_price_usd
+        and float(s.get("price_usd", 9999)) <= max_price_usd
     ]
     return candidates
 
@@ -163,9 +163,9 @@ def relay_route(
 
     for provider in providers[:max_attempts]:
         attempts += 1
-        url = provider.get("endpoint_url") or provider.get("url", "")
+        url = provider.get("url", "")
         name = provider.get("name", url)
-        price = float(provider.get("price_per_call", 0))
+        price = float(provider.get("price_usd", 0))
 
         if price > effective_budget:
             last_error = f"Provider {name} costs ${price:.4f}, exceeds remaining budget"
