@@ -7,10 +7,10 @@
 [![MCP Registry](https://img.shields.io/badge/MCP%20Registry-Published-blue?logo=github)](https://registry.modelcontextprotocol.io/servers/io.github.rplryan/x402-discovery-mcp)
 [![Smithery Score](https://img.shields.io/badge/Smithery-100%2F100-brightgreen?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPjwvc3ZnPg==)](https://smithery.ai/server/x402-discovery-mcp)
 [![API Status](https://img.shields.io/badge/API-Live%20v3.3.0-brightgreen)](https://x402-discovery-api.onrender.com)
-[![Services Indexed](https://img.shields.io/badge/Services%20Indexed-251%2B-brightgreen)](https://x402-discovery-api.onrender.com/.well-known/x402-discovery)
+[![Services Indexed](https://img.shields.io/badge/Services%20Indexed-343%2B-brightgreen)](https://x402-discovery-api.onrender.com/.well-known/x402-discovery)
 [![mcp.so](https://img.shields.io/badge/mcp.so-Submitted-orange)](https://mcp.so/server/x402-discovery-mcp)
 [![Glama](https://img.shields.io/badge/Glama-Under%20Review-orange)](https://glama.ai/mcp/servers)
-[![x402scout CLI](https://img.shields.io/badge/CLI-x402scout%201.0.0-brightgreen)](https://github.com/rplryan/x402-discovery-mcp/tree/main/cli)
+[![x402scout CLI](https://img.shields.io/badge/CLI-x402scout%201.0.0-brightgreen)](https://www.npmjs.com/package/x402scout)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -20,8 +20,8 @@
 > Search 340+ x402 services from your terminal
 
 ```bash
-# Install (GitHub Packages)
-npm install -g @rplryan/x402scout --registry=https://npm.pkg.github.com
+# Install (npm)
+npm install -g x402scout
 
 # Search
 x402scout search "weather data"
