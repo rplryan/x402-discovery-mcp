@@ -10,10 +10,38 @@
 [![Services Indexed](https://img.shields.io/badge/Services%20Indexed-251%2B-brightgreen)](https://x402-discovery-api.onrender.com/.well-known/x402-discovery)
 [![mcp.so](https://img.shields.io/badge/mcp.so-Submitted-orange)](https://mcp.so/server/x402-discovery-mcp)
 [![Glama](https://img.shields.io/badge/Glama-Under%20Review-orange)](https://glama.ai/mcp/servers)
+[![x402scout CLI](https://img.shields.io/badge/CLI-x402scout%201.0.0-brightgreen)](https://github.com/rplryan/x402-discovery-mcp/tree/main/cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
+## Terminal CLI — x402scout
+
+> Search 340+ x402 services from your terminal
+
+```bash
+# Install (GitHub Packages)
+npm install -g @rplryan/x402scout --registry=https://npm.pkg.github.com
+
+# Search
+x402scout search "weather data"
+
+# Top services by trust score
+x402scout top 10
+
+# Browse by category
+x402scout browse data
+
+# Scan a URL for x402 compliance
+x402scout scan https://api.yourservice.com
+
+# Ecosystem stats
+x402scout stats
+```
+
+See [cli/README.md](cli/README.md) for full usage.
+
+---
 ## What This Is (30 seconds)
 
 **x402** is Coinbase's HTTP-native micropayment standard for the agentic web. An AI agent hits an endpoint, gets an HTTP 402 challenge, pays with USDC on Base, and receives data — no API keys, no subscriptions, pure machine-to-machine.
