@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: x402-scout-relay
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python relay_server.py
+    envVars:
+      - key: DISCOVERY_API_URL
+        value: https://x402-discovery-api.onrender.com
+      - key: RELAY_PRICE_USD
+        value: "0.003"
+      - key: RELAY_MIN_TRUST_SCORE
+        value: "50"
+      - key: PORT
+        value: "8000"
