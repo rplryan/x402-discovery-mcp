@@ -38,26 +38,67 @@ BIDS_REGISTRATION_FEE_USD = float(os.environ.get("BID_REGISTRATION_FEE_USD", "0.
 
 # ── helpers ─────────────────────────────────────────────────────────────────
 def _build_402_response(amount_usd: float) -> dict:
-    """Build a 402 Payment Required response for the given amount."""
+    """Build a Bazaar-compatible 402 Payment Required response."""
     amount_atomic = int(amount_usd * 1_000_000)
+    accept_entry = {
+        "scheme": "exact",
+        "network": "base",
+        "maxAmountRequired": str(amount_atomic),
+        "resource": "",
+        "description": f"scout_relay service fee ${amount_usd:.4f}",
+        "mimeType": "application/json",
+        "payTo": WALLET_ADDRESS,
+        "maxTimeoutSeconds": 60,
+        "asset": USEC_BASE,
+        "extra": {"name": "USD Coin", "version": "2"},
+        "outputSchema": {
+            "input": {
+                "type": "http",
+                "method": "POST",
+                "discoverable": True,
+            },
+            "output": {
+                "type": "json",
+                "example": {"description": "scout_relay routing result"},
+            },
+        },
+        "extensions": {
+            "bazaar": {
+                "info": {
+                    "input": {"type": "http", "method": "POST"},
+                    "output": {"type": "json", "example": {"description": "scout_relay routing result"}},
+                },
+                "schema": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "type": "object",
+                    "properties": {
+                        "input": {
+                            "type": "object",
+                            "properties": {
+                                "type": {"type": "string", "const": "http"},
+                                "method": {"type": "string"},
+                                "discoverable": {"type": "boolean"},
+                            },
+                            "required": ["type"],
+                        },
+                        "output": {
+                            "type": "object",
+                            "properties": {
+                                "type": {"type": "string"},
+                                "example": {"type": "object"},
+                            },
+                            "required": ["type"],
+                        },
+                    },
+                    "required": ["input"],
+                },
+            }
+        },
+    }
     return {
         "x402Version": 1,
         "error": "Payment required",
-        "accepts": [{
-            "scheme": "exact",
-            "network": "base-mainnet",
-            "maxAmountRequired": str(amount_atomic),
-            "resource": "",
-            "description": f"scout_relay service fee ${amount_usd:.4f}",
-            "mimeType": "application/json",
-            "payTo": WALLET_ADDRESS,
-            "maxTimeoutSeconds": 60,
-            "asset": USEC_BASE,
-            "extra": {
-                "name": "USD Coin",
-                "version": "2",
-            },
-        }],
+        "accepts": [accept_entry],
     }
 
 
