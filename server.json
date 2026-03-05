@@ -4,7 +4,7 @@
   "title": "x402 Service Discovery",
   "description": "Discover & rank x402 payment-gated APIs by capability, price & ERC-8004 trust. USDC on Base.",
   "version": "1.2.0",
-  "websiteUrl": "https://github.com/rplryan/x402-discovery-mcp",
+  "websiteUrl": "https://x402scout.com",
   "repository": {
     "url": "https://github.com/rplryan/x402-discovery-mcp",
     "source": "github",
@@ -17,6 +17,12 @@
       "transport": {
         "type": "stdio"
       }
+    }
+  ],
+  "remotes": [
+    {
+      "transportType": "http",
+      "url": "https://x402scout.com/mcp"
     }
   ]
 }
