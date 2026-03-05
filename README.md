@@ -1,13 +1,13 @@
 # x402 Service Discovery MCP Server
 
-> 📦 **40+ Docker pulls** · 100 unique developers · [⭐ Star to help others find this](https://github.com/rplryan/x402-discovery-mcp)
+> [⭐ Star to help others find this](https://github.com/rplryan/x402-discovery-mcp) — if x402Scout has saved you time, a star helps other developers find it
 
-> **The community-built Bazaar for the x402 agentic economy — 343+ live services, real-time quality signals, facilitator-compatibility checks, and ERC-8004 trust scoring. The discovery layer that Coinbase's own PROJECT-IDEAS.md asked the community to build.**
+> **The community-built Bazaar for the x402 agentic economy — a continuously growing catalog of live services with real-time quality signals, facilitator-compatibility checks, and ERC-8004 trust scoring. The discovery layer that Coinbase's own PROJECT-IDEAS.md asked the community to build.**
 
 [![MCP Registry](https://img.shields.io/badge/MCP%20Registry-Published-blue?logo=github)](https://registry.modelcontextprotocol.io/servers/io.github.rplryan/x402-discovery-mcp)
 [![Smithery Score](https://img.shields.io/badge/Smithery-100%2F100-brightgreen?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPjwvc3ZnPg==)](https://smithery.ai/server/x402-discovery-mcp)
-[![API Status](https://img.shields.io/badge/API-Live%20v3.4.0-brightgreen)](https://x402-discovery-api.onrender.com)
-[![Services Indexed](https://img.shields.io/badge/Services%20Indexed-343%2B-brightgreen)](https://x402-discovery-api.onrender.com/.well-known/x402-discovery)
+[![API Status](https://img.shields.io/badge/API-Live-brightgreen)](https://x402scout.com)
+[![Services Indexed](https://img.shields.io/badge/Services%20Indexed-Live%20Catalog-brightgreen)](https://x402scout.com/catalog)
 [![scout_relay](https://img.shields.io/badge/scout__relay-v2.1.0-brightgreen)](https://x402-scout-relay.onrender.com)
 [![x402scout CLI](https://img.shields.io/badge/CLI-x402scout%201.0.0-brightgreen)](https://www.npmjs.com/package/x402scout)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -16,7 +16,7 @@
 
 ## Terminal CLI — x402scout
 
-> Search 343+ x402 services from your terminal
+> Search the full x402 service catalog from your terminal
 
 ```bash
 # Install (npm)
@@ -87,7 +87,7 @@ curl -X POST https://x402-scout-relay.onrender.com/route \
 
 **x402** is Coinbase's HTTP-native micropayment standard for the agentic web. An AI agent hits an endpoint, gets an HTTP 402 challenge, pays with USDC on Base, and receives data — no API keys, no subscriptions, pure machine-to-machine.
 
-**The problem:** 343+ x402-payable services exist across the ecosystem. The official x402.org catalog lists names. That's it. No uptime data. No latency scores. No facilitator-compatibility flags. No trust signals. An agent has no way to know which services are actually live, trustworthy, or compatible with its payment flow.
+**The problem:** Hundreds of x402-payable services exist across the ecosystem. The official x402.org catalog lists names. That's it. No uptime data. No latency scores. No facilitator-compatibility flags. No trust signals. An agent has no way to know which services are actually live, trustworthy, or compatible with its payment flow.
 
 **This MCP server solves it.** Connect any Claude, Cursor, or Windsurf agent directly to the x402 Service Discovery API — a continuously-updated catalog with real quality signals on every entry. Find services, check health, verify facilitator compatibility, and register new endpoints — all from inside your AI workflow.
 
@@ -98,7 +98,7 @@ curl -X POST https://x402-scout-relay.onrender.com/route \
 ### Discovery Tools
 | Tool | What It Does | Cost |
 |------|-------------|------|
-| `x402_discover` | Semantic search across 343+ services by keyword, category, max price | **$0.010 USDC** *(pays via x402)* |
+| `x402_discover` | Semantic search across the live catalog by keyword, category, max price | **$0.010 USDC** *(pays via x402)* |
 | `x402_health` | Real-time uptime + latency check for any service URL | Free |
 | `x402_register` | Register a new x402 service into the live catalog | Free |
 | `x402_attest` | ERC-8004 trust score and reputation signals for a service | Free |
@@ -162,7 +162,7 @@ curl "https://x402-discovery-api.onrender.com/.well-known/x402-discovery"
 
 ### The Discovery Gap in x402
 
-The x402 protocol solves *payment*. It does not solve *discovery*. When 343+ services exist but agents can't find, evaluate, or route to them intelligently, the protocol's full value is unrealized.
+The x402 protocol solves *payment*. It does not solve *discovery*. When hundreds of services exist but agents can't find, evaluate, or route to them intelligently, the protocol's full value is unrealized.
 
 This project fills that gap with three layers:
 
@@ -190,13 +190,13 @@ This project fills that gap with three layers:
 ## Live Catalog Stats
 
 ```
-Total Services:      343+
+Total Services:      Live — check https://x402scout.com/catalog
 Auto-scan interval:  6 hours
-Scan sources:        x402.org/ecosystem, awesome-x402, x402scan.com
+Scan sources:        x402.org/ecosystem, awesome-x402, GitHub search
 Categories:          data, compute, agent, utility
 Facilitator-compat:  Flagged per service
 Trust signals:       ERC-8004 per service
-API uptime:          Live at https://x402-discovery-api.onrender.com
+API uptime:          Live at https://x402scout.com
 Router:              Live at https://x402-scout-relay.onrender.com
 ```
 
@@ -204,10 +204,10 @@ Router:              Live at https://x402-scout-relay.onrender.com
 
 | Category | Count | Notable Services |
 |----------|-------|------------------|
-| **data** | 23+ | CoinGecko, Einstein AI, DJD Agent Score, Ordiscan, Nansen, Zapper, AdEx AURA |
-| **utility** | 20+ | dTelecom STT, Pinata, Tip.MD, Cybercentry, Trusta Attestation, AsterPay |
-| **compute** | 10+ | BlockRun.AI, X402Engine (28 APIs), AurraCloud, AiMo, QuickSilver |
-| **agent** | 9+ | Questflow, Ubounty, Bitte Protocol, Farnsworth, SerenaI |
+| **data** | [Live](https://x402scout.com/catalog) | CoinGecko, Einstein AI, DJD Agent Score, Ordiscan, Nansen, Zapper, AdEx AURA |
+| **utility** | [Live](https://x402scout.com/catalog) | dTelecom STT, Pinata, Tip.MD, Cybercentry, Trusta Attestation, AsterPay |
+| **compute** | [Live](https://x402scout.com/catalog) | BlockRun.AI, X402Engine, AurraCloud, AiMo, QuickSilver |
+| **agent** | [Live](https://x402scout.com/catalog) | Questflow, Ubounty, Bitte Protocol, Farnsworth, SerenaI |
 
 ---
 
@@ -254,7 +254,7 @@ This project is a direct implementation of two items from Coinbase's own public 
 **From the CDP x402 facilitator roadmap:**
 > *"A discovery layer for buyers (human and agents) to find available services (Bazaar)"*
 
-We built the community Bazaar. It's live. It has 343+ services. It has quality signals the official page doesn't. And it **uses x402 payments itself** — `x402_discover` costs $0.010 USDC, paid via the protocol it serves. scout_relay extends this: it *routes and executes* x402 payments autonomously, charging its own x402 fee for the service.
+We built the community Bazaar. It's live. It has quality signals the official page doesn't. And it **uses x402 payments itself** — `x402_discover` costs $0.010 USDC, paid via the protocol it serves. scout_relay extends this: it *routes and executes* x402 payments autonomously, charging its own x402 fee for the service.
 
 ### What We've Shipped (11 days)
 
@@ -264,7 +264,7 @@ We built the community Bazaar. It's live. It has 343+ services. It has quality s
 | x402 Discovery MCP Server | ✅ Docker + GitHub MCP Registry |
 | x402 RouteNet v1.0.0 (smart routing) | ✅ Live on Render |
 | x402 Payment Harness v1.0.0 (EOA testing) | ✅ PyPI `pip install x402-payment-harness` |
-| 343+ services indexed with quality signals | ✅ Auto-updating every 6h |
+| Continuously growing catalog with quality signals | ✅ Auto-updating every 6h |
 | ERC-8004 trust layer | ✅ Per-service trust scoring |
 | Facilitator compatibility layer | ✅ Pre-payment compatibility check |
 | Full HTTP 402 protocol flow proven on Base | ✅ EIP-712 sign → X-PAYMENT header → 200 |
@@ -301,7 +301,7 @@ We built the community Bazaar. It's live. It has 343+ services. It has quality s
 │     x402 Discovery API (Render, v3.4.0)             │
 │     https://x402-discovery-api.onrender.com         │
 │                                                     │
-│  • 343+ services  • Auto-scan every 6h              │
+│  • Growing catalog  • Auto-scan every 6h            │
 │  • Health checks  • Facilitator compat flags        │
 │  • ERC-8004 trust • llm_usage_prompt per service    │
 └─────────────────────────────────────────────────────┘
