@@ -174,36 +174,33 @@ async def root():
 
 @app.post("/route")
 async def route(req: RouteRequest):
-    result = relay_route(
+    result = await relay_route(
         intent=req.intent,
         budget_usd=req.budget_usd,
-        agent_id=req.agent_id,
-        wallet_address=req.wallet_address,
-        private_key=req.private_key,
+        wallet=req.wallet_address,
     )
     return result
 
 
 @app.post("/execute")
 async def execute(req: ExecuteRequest):
-    result = relay_execute(
-        url=req.url,
-        amount_usd=req.amount_usd,
+    result = await relay_execute(
+        endpoint_url=req.url,
+        amount_usdc=req.amount_usd,
         agent_id=req.agent_id,
-        wallet_address=req.wallet_address,
-        private_key=req.private_key,
+        wallet=req.wallet_address,
     )
     return result
 
 
 @app.get("/discover")
 async def discover(intent: str = "", limit: int = 10):
-    return relay_discover(intent=intent, limit=limit)
+    return await relay_discover(capability=intent, max_price_usd=1.0)
 
 
 @app.get("/audit")
 async def audit(agent_id: Optional[str] = None, limit: int = 50):
-    return relay_audit(agent_id=agent_id, limit=limit)
+    return await relay_audit(agent_id=agent_id, limit=limit)
 
 
 # ── placement bid endpoints ───────────────────────────────────────────────────
