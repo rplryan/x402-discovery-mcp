@@ -99,10 +99,10 @@ curl -X POST https://x402-scout-relay.onrender.com/route \
 | Tool | What It Does | Cost |
 |------|-------------|------|
 | `x402_discover` | Semantic search across the live catalog by keyword, category, max price | **$0.010 USDC** *(pays via x402)* |
-| `x402_health` | Real-time uptime + latency check for any service URL | Free |
-| `x402_register` | Register a new x402 service into the live catalog | Free |
+| `x402_health` | Real-time uptime + latency check for any registered service | **$0.001 USDC** *(pays via x402)* |
+| `x402_register` | Register a new x402 service (HTTPS-only, rate-limited) | Free |
 | `x402_attest` | ERC-8004 trust score and reputation signals for a service | Free |
-| `x402_browse` | Verify facilitator compatibility before committing to a payment | Free |
+| `x402_scan` | Full x402 compliance scan: live config, trust score, mismatch detection | **$0.010 USDC** *(pays via x402)* |
 
 ### Relay Tools (via scout_relay)
 | Tool | What It Does | Cost |
@@ -150,10 +150,10 @@ The Discovery API is publicly accessible — no authentication required:
 
 ```bash
 # Search for services
-curl "https://x402-discovery-api.onrender.com/discover?query=blockchain+analytics&max_price_usd=0.01"
+curl "https://x402scout.com/discover?query=blockchain+analytics&max_price_usd=0.01"
 
 # Full catalog
-curl "https://x402-discovery-api.onrender.com/.well-known/x402-discovery"
+curl "https://x402scout.com/.well-known/x402-discovery"
 ```
 
 ---
@@ -184,6 +184,7 @@ This project fills that gap with three layers:
 | MCP integration | ❌ None | ✅ 9 tools, registry-published |
 | Semantic search | ❌ None | ✅ Keyword + category + price |
 | Autonomous execution | ❌ None | ✅ scout_relay — discover + pay + retry |
+| Agent integration hints | ❌ None | ✅ `howToUse` block per service — exact x402 payment steps |
 
 ---
 
@@ -196,7 +197,9 @@ Scan sources:        x402.org/ecosystem, awesome-x402, GitHub search
 Categories:          data, compute, agent, utility
 Facilitator-compat:  Flagged per service
 Trust signals:       ERC-8004 per service
-API uptime:          Live at https://x402scout.com
+Primary URL:         https://x402scout.com
+Trust scores:        0-100 per service (ERC-8004 based)
+Payment metadata:    x402Config (address, asset, version) per service
 Router:              Live at https://x402-scout-relay.onrender.com
 ```
 
@@ -223,8 +226,8 @@ result = x402_discover(
 )
 # Returns: ranked list with price, uptime %, latency, llm_usage_prompt
 
-# 2. Verify the top result is facilitator-compatible before paying
-compat = x402_browse(url=result[0]["url"])
+# 2. Scan for compliance + trust before paying
+scan = x402_scan(url=result[0]["url"])
 
 # 3. Check live health before committing
 health = x402_health(url=result[0]["url"])
@@ -260,7 +263,7 @@ We built the community Bazaar. It's live. It has quality signals the official pa
 
 | Deliverable | Status |
 |-------------|---------|
-| x402 Service Discovery API v3.4.0 | ✅ Live on Render |
+| x402 Service Discovery API v3.7.0 | ✅ Live on Render |
 | x402 Discovery MCP Server | ✅ Docker + GitHub MCP Registry |
 | x402 RouteNet v1.0.0 (smart routing) | ✅ Live on Render |
 | x402 Payment Harness v1.0.0 (EOA testing) | ✅ PyPI `pip install x402-payment-harness` |
@@ -271,6 +274,11 @@ We built the community Bazaar. It's live. It has quality signals the official pa
 | x402scout CLI v1.0.0 | ✅ `npm install -g x402scout` |
 | scout_relay v2.1.0 (payment router) | ✅ Live on Render |
 | Provider placement bids (POST /placement/bid) | ✅ Live — x402-gated, self-serve |
+| x402Config payment metadata in catalog | ✅ payment_address, asset_contract, x402Version per service |
+| `/scan` compliance endpoint (paid) | ✅ Live — compliance grade, mismatch detection, trust score |
+| `howToUse` integration blocks | ✅ Per-service exact x402 payment steps in /discover results |
+| Landing page (x402scout.com) | ✅ NVG green design, live stats, code snippets |
+| Endpoint security hardening | ✅ SSRF guard, rate limiting, HTTPS-only on /register |
 | Smithery score | ✅ 100/100 |
 | GitHub MCP Registry | ✅ Published: `io.github.rplryan/x402-discovery-mcp` |
 
@@ -283,7 +291,7 @@ We built the community Bazaar. It's live. It has quality signals the official pa
 │              AI Agent (Claude / Cursor / Windsurf)  │
 │                                                     │
 │  x402_discover → x402_health → x402_attest         │
-│  x402_browse → x402_register → x402_scan           │
+│  x402_scan → x402_register → x402_health           │
 │                                                     │
 │  scout_route → scout_execute → scout_audit          │
 └──────────┬──────────────────────────┬───────────────┘
@@ -298,8 +306,8 @@ We built the community Bazaar. It's live. It has quality signals the official pa
            └──────────────┬───────────┘
                           │
 ┌─────────────────────────▼───────────────────────────┐
-│     x402 Discovery API (Render, v3.4.0)             │
-│     https://x402-discovery-api.onrender.com         │
+│     x402 Discovery API (Render, v3.7.0)             │
+│     https://x402scout.com                          │
 │                                                     │
 │  • Growing catalog  • Auto-scan every 6h            │
 │  • Health checks  • Facilitator compat flags        │
@@ -313,7 +321,7 @@ We built the community Bazaar. It's live. It has quality signals the official pa
 
 | Project | Description | Status |
 |---------|-------------|--------|
-| [x402 Discovery API](https://x402-discovery-api.onrender.com) | REST backend powering this MCP server | Live v3.4.0 |
+| [x402 Discovery API](https://x402scout.com) | REST backend powering this MCP server | Live v3.7.0 |
 | [scout_relay](https://x402-scout-relay.onrender.com) | Autonomous x402 payment router — discover + execute + audit in one call | Live v2.1.0 |
 | [x402 RouteNet](https://github.com/rplryan/x402-routenet) | Smart routing across discovered services | Live v1.0.0 |
 | [x402 Payment Harness](https://github.com/rplryan/x402-payment-harness) | EOA-based Python library + CLI for x402 payment testing | PyPI v1.0.0 |
@@ -325,7 +333,7 @@ We built the community Bazaar. It's live. It has quality signals the official pa
 If you're building an x402-enabled service, add it to the catalog:
 
 ```bash
-curl -X POST https://x402-discovery-api.onrender.com/register \
+curl -X POST https://x402scout.com/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "My Service",
