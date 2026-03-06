@@ -2,6 +2,7 @@
 scout_relay REST API — Render deployment entrypoint v2.1.0
 Exposes relay routing as HTTP endpoints + provider self-serve placement bids.
 """
+import base64
 import json
 import logging
 import os
@@ -10,6 +11,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
+import httpx
+from eth_account import Account
+from eth_account.messages import encode_typed_data
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -35,6 +39,11 @@ USEC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base
 BIDS_FILE = Path("/tmp/placement_bids.json")
 BIDS_REGISTRATION_FEE_USD = float(os.environ.get("BID_REGISTRATION_FEE_USD", "0.01"))
 
+# CDP credentials for settle (Bazaar indexing)
+CDP_API_KEY_ID: str = os.environ.get("CDP_API_KEY_ID", "")
+CDP_API_KEY_SECRET: str = os.environ.get("CDP_API_KEY_SECRET", "")
+CDP_SETTLE_URL: str = "https://api.cdp.coinbase.com/platform/v2/x402/settle"
+
 
 # ── helpers ─────────────────────────────────────────────────────────────────
 def _build_402_response(amount_usd: float) -> dict:
@@ -42,7 +51,7 @@ def _build_402_response(amount_usd: float) -> dict:
     amount_atomic = int(amount_usd * 1_000_000)
     accept_entry = {
         "scheme": "exact",
-        "network": "base",
+        "network": "eip155:8453",
         "maxAmountRequired": str(amount_atomic),
         "resource": "",
         "description": f"scout_relay service fee ${amount_usd:.4f}",
@@ -173,6 +182,137 @@ class PlacementBidRequest(BaseModel):
     contact_email: Optional[str] = None
 
 
+# ── payment verification ─────────────────────────────────────────────────────
+
+def _generate_cdp_jwt(method: str, path: str) -> str | None:
+    if not CDP_API_KEY_ID or not CDP_API_KEY_SECRET:
+        return None
+    try:
+        from cdp.auth.utils.jwt import generate_jwt, JwtOptions
+        return generate_jwt(JwtOptions(
+            api_key_id=CDP_API_KEY_ID,
+            api_key_secret=CDP_API_KEY_SECRET,
+            request_method=method,
+            request_host="api.cdp.coinbase.com",
+            request_path=path,
+        ))
+    except Exception:
+        return None
+
+
+def _verify_x402_payment(payment_header: str, resource_url: str) -> tuple[bool, str]:
+    """Verify inbound x402 EIP-712 signed payment. Returns (is_valid, payer_address)."""
+    if not WALLET_ADDRESS:
+        # No wallet configured — cannot verify, pass through
+        return True, ""
+    try:
+        decoded = base64.b64decode(payment_header + "==")
+        data = json.loads(decoded)
+
+        scheme = data.get("scheme", "")
+        network = data.get("network", "")
+        if scheme != "exact" or network not in ("eip155:8453", "base"):
+            return False, ""
+
+        payload = data.get("payload", {})
+        signature = payload.get("signature", "")
+        auth = payload.get("authorization", {})
+
+        valid_before = int(auth.get("validBefore", 0))
+        if valid_before > 0 and int(time.time()) > valid_before:
+            return False, ""
+
+        if auth.get("to", "").lower() != WALLET_ADDRESS.lower():
+            return False, ""
+
+        signed_amount = int(auth.get("value", 0))
+        price_units = int(RELAY_PRICE_USD * 1_000_000)
+        if signed_amount < price_units:
+            return False, ""
+
+        nonce_raw = auth.get("nonce", "0x" + "0" * 64)
+        nonce_bytes = bytes.fromhex(nonce_raw[2:] if nonce_raw.startswith("0x") else nonce_raw)
+        structured = {
+            "domain": {
+                "name": "USD Coin",
+                "version": "2",
+                "chainId": 8453,
+                "verifyingContract": USEC_BASE,
+            },
+            "message": {
+                "from": auth.get("from", ""),
+                "to": auth.get("to", ""),
+                "value": signed_amount,
+                "validAfter": int(auth.get("validAfter", 0)),
+                "validBefore": valid_before,
+                "nonce": nonce_bytes,
+            },
+            "primaryType": "TransferWithAuthorization",
+            "types": {
+                "EIP712Domain": [
+                    {"name": "name", "type": "string"},
+                    {"name": "version", "type": "string"},
+                    {"name": "chainId", "type": "uint256"},
+                    {"name": "verifyingContract", "type": "address"},
+                ],
+                "TransferWithAuthorization": [
+                    {"name": "from", "type": "address"},
+                    {"name": "to", "type": "address"},
+                    {"name": "value", "type": "uint256"},
+                    {"name": "validAfter", "type": "uint256"},
+                    {"name": "validBefore", "type": "uint256"},
+                    {"name": "nonce", "type": "bytes32"},
+                ],
+            },
+        }
+        msg = encode_typed_data(full_message=structured)
+        recovered = Account.recover_message(msg, signature=signature)
+        payer = auth.get("from", "")
+        if recovered.lower() != payer.lower():
+            return False, ""
+
+        # CDP settle — triggers Bazaar indexing (best-effort)
+        try:
+            output_schema = {
+                "input": {"type": "http", "method": "POST", "discoverable": True},
+                "output": {"type": "json", "example": {"description": "scout_relay routing result"}},
+            }
+            settle_payload = {
+                "x402Version": 1,
+                "paymentPayload": {
+                    "x402Version": 1,
+                    "scheme": "exact",
+                    "network": "eip155:8453",
+                    "payload": payload,
+                },
+                "paymentRequirements": {
+                    "scheme": "exact",
+                    "network": "eip155:8453",
+                    "maxAmountRequired": str(price_units),
+                    "resource": resource_url,
+                    "description": f"scout_relay service fee ${RELAY_PRICE_USD:.4f}",
+                    "mimeType": "application/json",
+                    "payTo": WALLET_ADDRESS,
+                    "maxTimeoutSeconds": 60,
+                    "asset": USEC_BASE,
+                    "outputSchema": output_schema,
+                    "extra": {"name": "USD Coin", "version": "2"},
+                },
+            }
+            headers = {"Content-Type": "application/json"}
+            jwt_token = _generate_cdp_jwt("POST", "/platform/v2/x402/settle")
+            if jwt_token:
+                headers["Authorization"] = f"Bearer {jwt_token}"
+            with httpx.Client(timeout=10.0) as sc:
+                sc.post(CDP_SETTLE_URL, json=settle_payload, headers=headers)
+        except Exception:
+            pass  # Non-fatal
+
+        return True, payer
+    except Exception:
+        return False, ""
+
+
 # ── middleware: x402 gate ────────────────────────────────────────────────────
 GATED_PATHS = {"/route", "/execute"}
 
@@ -182,6 +322,15 @@ async def x402_gate(request: Request, call_next):
     if request.method == "POST" and request.url.path in GATED_PATHS:
         payment_header = request.headers.get("X-Payment")
         if not payment_header:
+            return JSONResponse(
+                status_code=402,
+                content=_build_402_response(RELAY_PRICE_USD),
+                headers={"x402Version": "1"},
+            )
+        host = request.headers.get("host", "x402-scout-relay.onrender.com")
+        resource_url = f"https://{host}{request.url.path}"
+        is_valid, payer = _verify_x402_payment(payment_header, resource_url)
+        if not is_valid:
             return JSONResponse(
                 status_code=402,
                 content=_build_402_response(RELAY_PRICE_USD),
