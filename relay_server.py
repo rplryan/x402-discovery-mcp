@@ -271,33 +271,26 @@ def _verify_x402_payment(payment_header: str, resource_url: str) -> tuple[bool, 
         if recovered.lower() != payer.lower():
             return False, ""
 
-        # CDP settle — triggers Bazaar indexing (best-effort)
+        # CDP settle — on-chain transferWithAuthorization (best-effort)
+        # Must use x402 V2 payload format (CDP API requirement)
         try:
-            output_schema = {
-                "input": {"type": "http", "method": "POST", "discoverable": True},
-                "output": {"type": "json", "example": {"description": "scout_relay routing result"}},
+            v2_reqs = {
+                "scheme": "exact",
+                "network": "eip155:8453",
+                "asset": USEC_BASE,
+                "amount": str(price_units),
+                "payTo": WALLET_ADDRESS,
+                "maxTimeoutSeconds": 60,
+                "extra": {"name": "USD Coin", "version": "2"},
             }
             settle_payload = {
-                "x402Version": 1,
+                "x402Version": 2,
                 "paymentPayload": {
-                    "x402Version": 1,
-                    "scheme": "exact",
-                    "network": "eip155:8453",
+                    "x402Version": 2,
                     "payload": payload,
+                    "accepted": v2_reqs,
                 },
-                "paymentRequirements": {
-                    "scheme": "exact",
-                    "network": "eip155:8453",
-                    "maxAmountRequired": str(price_units),
-                    "resource": resource_url,
-                    "description": f"scout_relay service fee ${RELAY_PRICE_USD:.4f}",
-                    "mimeType": "application/json",
-                    "payTo": WALLET_ADDRESS,
-                    "maxTimeoutSeconds": 60,
-                    "asset": USEC_BASE,
-                    "outputSchema": output_schema,
-                    "extra": {"name": "USD Coin", "version": "2"},
-                },
+                "paymentRequirements": v2_reqs,
             }
             headers = {"Content-Type": "application/json"}
             jwt_token = _generate_cdp_jwt("POST", "/platform/v2/x402/settle")
