@@ -1,37 +1,19 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/mcp-server.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "id": "io.github.rplryan/x402-discovery-mcp",
-  "name": "x402 Discovery",
+  "name": "io.github.rplryan/x402-discovery-mcp",
+  "title": "x402 Discovery MCP",
   "description": "Discover x402 APIs by capability, price & trust. Powered by x402Scout.",
-  "version": "1.2.2",
-  "license": "MIT",
-  "author": {
-    "name": "rplryan",
-    "url": "https://github.com/rplryan"
-  },
+  "version": "1.2.3",
+  "websiteUrl": "https://x402scout.com",
   "repository": {
-    "type": "git",
-    "url": "https://github.com/rplryan/x402-discovery-mcp"
+    "url": "https://github.com/rplryan/x402-discovery-mcp",
+    "source": "github"
   },
-  "homepage": "https://x402scout.com",
-  "icon": "https://x402scout.com/static/icon.png",
   "remotes": [
     {
-      "transportType": "sse",
-      "url": "https://x402scout.com/mcp"
+      "type": "sse",
+      "url": "https://x402-scout-relay.onrender.com/sse"
     }
-  ],
-  "categories": [
-    "data",
-    "finance",
-    "productivity"
-  ],
-  "tags": [
-    "x402",
-    "payments",
-    "discovery",
-    "usdc",
-    "base",
-    "api"
   ]
 }
