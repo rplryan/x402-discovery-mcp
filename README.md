@@ -29,7 +29,7 @@ curl -X POST https://x402-scoutgate.onrender.com/register \  -H "Content-Type: a
 
 That's it. Your API is now **x402-enabled**, **auto-listed in x402Scout**, and **settling on Base mainnet** in real USDC. ScoutGate handles facilitator integration, EIP-712 verification, and settlement.
 
-**Fee model:** 2.5% per transaction (min $0.003). **Live at:** https://x402-scoutgate.onrender.com | [Register your API](https://x402scout.com/register)
+**Fee model:** 2% per transaction (min $0.002). **Live at:** https://x402-scoutgate.onrender.com | [Register your API](https://x402scout.com/register)
 
 ---
 
