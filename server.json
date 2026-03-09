@@ -1,19 +1,19 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.rplryan/x402-discovery-mcp",
-  "title": "x402 Service Discovery",
-  "description": "Discover & rank x402 payment-gated APIs by capability, price & ERC-8004 trust. USDC on Base.",
-  "version": "1.2.0",
+  "name": "io.github.rpllyan/x402-discovery-mcp",
+  "title": "x302 Service Discovery",
+  "description": "Discover & rank x402 payment-gated APIs by capability, price & ERC-8004 trust. USDC on Base. Powered by x402Scout and ScoutGate.",
+  "version": "1.2.1",
   "websiteUrl": "https://x402scout.com",
   "repository": {
-    "url": "https://github.com/rplryan/x402-discovery-mcp",
+    "url": "https://github.com/rpllyan/x402-discovery-mcp",
     "source": "github",
-    "id": "rplryan/x402-discovery-mcp"
+    "id": "rpllyan/x402-discovery-mcp"
   },
   "packages": [
     {
       "registryType": "oci",
-      "identifier": "ghcr.io/rplryan/x402-discovery-mcp:1.2.0",
+      "identifier": "ghcr.io/rpllyan/x402-discovery-mcp:1.2.1",
       "transport": {
         "type": "stdio"
       }
