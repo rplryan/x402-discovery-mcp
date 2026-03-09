@@ -1,28 +1,37 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.rpllyan/x402-discovery-mcp",
-  "title": "x302 Service Discovery",
-  "description": "Discover & rank x402 payment-gated APIs by capability, price & ERC-8004 trust. USDC on Base. Powered by x402Scout and ScoutGate.",
-  "version": "1.2.1",
-  "websiteUrl": "https://x402scout.com",
-  "repository": {
-    "url": "https://github.com/rpllyan/x402-discovery-mcp",
-    "source": "github",
-    "id": "rpllyan/x402-discovery-mcp"
+  "$schema": "https://static.modelcontextprotocol.io/schemas/mcp-server.json",
+  "id": "io.github.rplryan/x402-discovery-mcp",
+  "name": "x402 Discovery",
+  "description": "Discover x402 APIs by capability, price & trust. Powered by x402Scout.",
+  "version": "1.2.2",
+  "license": "MIT",
+  "author": {
+    "name": "rplryan",
+    "url": "https://github.com/rplryan"
   },
-  "packages": [
-    {
-      "registryType": "oci",
-      "identifier": "ghcr.io/rpllyan/x402-discovery-mcp:1.2.1",
-      "transport": {
-        "type": "stdio"
-      }
-    }
-  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rplryan/x402-discovery-mcp"
+  },
+  "homepage": "https://x402scout.com",
+  "icon": "https://x402scout.com/static/icon.png",
   "remotes": [
     {
-      "transportType": "http",
+      "transportType": "sse",
       "url": "https://x402scout.com/mcp"
     }
+  ],
+  "categories": [
+    "data",
+    "finance",
+    "productivity"
+  ],
+  "tags": [
+    "x402",
+    "payments",
+    "discovery",
+    "usdc",
+    "base",
+    "api"
   ]
 }
