@@ -10,7 +10,26 @@
 [![Services Indexed](https://img.shields.io/badge/Services%20Indexed-Live%20Catalog-brightgreen)](https://x402scout.com/catalog)
 [![scout_relay](https://img.shields.io/badge/scout__relay-v2.1.0-brightgreen)](https://x402-scout-relay.onrender.com)
 [![x402scout CLI](https://img.shields.io/badge/CLI-x402scout%201.0.0-brightgreen)](https://www.npmjs.com/package/x402scout)
+[![ScoutGate](https://img.shields.io/badge/ScoutGate-v1.0.0-brightgreen)](https://x402-scoutgate.onrender.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+---
+
+## ScoutGate — Instant x402 API Monetization
+
+> Wrap any existing API in x402 payments in under 2 minutes — no protocol knowledge required
+
+The x402 ecosystem's biggest friction point has been supply-side: getting an API *behind* x402 payments requires understanding EIP-712 headers, facilitator registration, and settlement logic. ScoutGate removes all of it.
+
+```bash
+# Register your existing API (30 seconds)
+curl -X POST https://x402-scoutgate.onrender.com/register \  -H "Content-Type: application/json" \  -d '{"api_url": "https://your-api.com", "wallet_address": "0xYourWallet", "price_usd": 0.01, "name": "My API"}'
+# Returns: {"proxy_url": "https://x402-scoutgate.onrender.com/api/abc123", "api_id": "abc123"}
+```
+
+That's it. Your API is now **x402-enabled**, **auto-listed in x402Scout**, and **settling on Base mainnet** in real USDC. ScoutGate handles facilitator integration, EIP-712 verification, and settlement.
+
+**Fee model:** 1% per transaction. **Live at:** https://x402-scoutgate.onrender.com | [Register your API](https://x402scout.com/register)
 
 ---
 
@@ -281,6 +300,7 @@ We built the community Bazaar. It's live. It has quality signals the official pa
 | Endpoint security hardening | ✅ SSRF guard, rate limiting, HTTPS-only on /register |
 | Smithery score | ✅ 100/100 |
 | GitHub MCP Registry | ✅ Published: `io.github.rplryan/x402-discovery-mcp` |
+| **ScoutGate v1.0.0** (x402 API monetization gateway) | ✅ Live on Render — wrap any API in x402 payments in 30 seconds |
 
 ---
 
@@ -325,6 +345,7 @@ We built the community Bazaar. It's live. It has quality signals the official pa
 | [scout_relay](https://x402-scout-relay.onrender.com) | Autonomous x402 payment router — discover + execute + audit in one call | Live v2.1.0 |
 | [x402 RouteNet](https://github.com/rplryan/x402-routenet) | Smart routing across discovered services | Live v1.0.0 |
 | [x402 Payment Harness](https://github.com/rplryan/x402-payment-harness) | EOA-based Python library + CLI for x402 payment testing | PyPI v1.0.0 |
+| [ScoutGate](https://x402-scoutgate.onrender.com) | Wrap any existing API in x402 payments in 30 seconds — no protocol knowledge required | Live v1.0.0 |
 
 ---
 
