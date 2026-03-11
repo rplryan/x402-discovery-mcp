@@ -15,6 +15,7 @@ from typing import Optional
 
 import httpx
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 DISCOVERY_API = "https://x402-discovery-api.onrender.com"
 WALLET_ADDRESS = os.getenv("WALLET_ADDRESS", "0xDBBe14C418466Bf5BF0ED7638B4E6849B852aFfA")
@@ -46,7 +47,13 @@ mcp = FastMCP(
         "Returns quality-ranked results with uptime%, latency, pricing, and ready-to-use code snippets. "
         "This tool itself costs $0.010 USDC per query via x402 micropayment — "
         "demonstrating the exact protocol it helps you discover."
-    )
+    ),
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=True,
+    ),
 )
 def x402_discover(
     query: str,
@@ -130,9 +137,12 @@ def x402_discover(
     ]
     for i, s in enumerate(top, 1):
         snippet = s.get("sdk_snippet_python", "")
+        endpoint = s.get('endpoint_url', s.get('url', '?'))
+        if endpoint.startswith('http://'):
+            endpoint = endpoint.replace('http://', 'https://', 1)
         lines.append(
             f"{i}. **{s.get('name', '?')}** [{s.get('quality_tier', 'unverified').upper()}]\n"
-            f"   Endpoint: {s.get('endpoint_url', s.get('url', '?'))}\n"
+            f"   Endpoint: {endpoint}\n"
             f"   Price: ${s.get('price_per_call', '?')}/call\n"
             f"   Health: {s.get('health_status', '?')} | "
             f"Uptime: {s.get('uptime_pct', '?')}% | "
@@ -149,7 +159,13 @@ def x402_discover(
     description=(
         "Browse all registered x402 services, optionally filtered by category. "
         "Free, no payment required. Returns full catalog with quality signals."
-    )
+    ),
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=True,
+    ),
 )
 def x402_browse(category: Optional[str] = None) -> str:
     """Browse the complete catalog of registered x402 services.
@@ -188,11 +204,14 @@ def x402_browse(category: Optional[str] = None) -> str:
         f"Source: {DISCOVERY_API}/catalog\n",
     ]
     for s in services[:20]:
+        endpoint = s.get('endpoint_url', s.get('url', '?'))
+        if endpoint.startswith('http://'):
+            endpoint = endpoint.replace('http://', 'https://', 1)
         lines.append(
             f"• {s.get('name', '?')} [{s.get('quality_tier', 'unverified').upper()}] "
             f"${s.get('price_per_call', '?')}/call\n"
             f"  {s.get('description', '')}\n"
-            f"  {s.get('endpoint_url', s.get('url', '?'))}"
+            f"  {endpoint}"
         )
 
     if total > 20:
@@ -203,7 +222,13 @@ def x402_browse(category: Optional[str] = None) -> str:
 
 
 @mcp.tool(
-    description="Check real-time health status of any registered x402 service. Free, no payment required."
+    description="Check real-time health status of any registered x402 service. Free, no payment required.",
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=True,
+    ),
 )
 def x402_health(service_id: str) -> str:
     """Get live health status for a specific x402 service.
@@ -239,7 +264,13 @@ def x402_health(service_id: str) -> str:
     description=(
         "Register a new x402 service with the discovery index. "
         "Free. Your service will appear in the catalog and be discoverable by agents."
-    )
+    ),
+    annotations=ToolAnnotations(
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=False,
+        openWorldHint=True,
+    ),
 )
 def x402_register(
     name: str,
@@ -308,7 +339,13 @@ def x402_register(
         "avg latency, health status, and facilitator compatibility. "
         "Verify the signature offline using the JWKS at GET /jwks. "
         "Part of the ERC-8004 coldStartSignals spec (coinbase/x402#1375)."
-    )
+    ),
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=True,
+    ),
 )
 def x402_attest(service_id: str, raw: bool = False) -> str:
     """Get a signed EdDSA attestation for an x402 service's quality measurements.
