@@ -8,6 +8,7 @@ import json
 from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 from relay import (
     RELAY_PRICE_USD,
@@ -28,7 +29,8 @@ def register_relay_tools(mcp: FastMCP) -> None:
             f"Discovers the best available provider from the x402 catalog, executes payment "
             f"via Coinbase Agentic Wallet, and returns the result. "
             f"Charges ${RELAY_PRICE_USD:.3f} USDC routing fee per call (scout_relay v{RELAY_VERSION})."
-        )
+        ),
+        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True),
     )
     def scout_route(
         intent: str,
@@ -68,7 +70,8 @@ def register_relay_tools(mcp: FastMCP) -> None:
         description=(
             "Discover x402 providers for a capability without executing payment. "
             "Returns ranked list with trust scores, prices, and endpoints."
-        )
+        ),
+        annotations=ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=True),
     )
     def scout_discover(
         capability: str,
@@ -102,7 +105,8 @@ def register_relay_tools(mcp: FastMCP) -> None:
         description=(
             "Execute payment directly against a known x402 endpoint. "
             "Use when you already know the endpoint URL and price — skips discovery."
-        )
+        ),
+        annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True),
     )
     def scout_execute(
         endpoint_url: str,
@@ -123,7 +127,8 @@ def register_relay_tools(mcp: FastMCP) -> None:
         return json.dumps(result)
 
     @mcp.tool(
-        description="View recent scout_relay transaction history — what was purchased, which provider, cost paid."
+        description="View recent scout_relay transaction history — what was purchased, which provider, cost paid.",
+        annotations=ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=True),
     )
     def scout_audit(limit: int = 20) -> str:
         """View recent scout_relay transaction log.
